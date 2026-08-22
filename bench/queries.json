@@ -1,0 +1,185 @@
+[
+  {
+    "id": "q-exact-payment-timeout-const",
+    "text": "PAYMENT_GATEWAY_TIMEOUT_MS",
+    "kind": "exact",
+    "layer": null,
+    "relevant": [
+      "deployment/env-variables-reference.md",
+      "structure/module-payment.md",
+      "deployment/connection-timeout-tuning.md"
+    ]
+  },
+  {
+    "id": "q-exact-refund-service-url",
+    "text": "REFUND_SERVICE_URL",
+    "kind": "exact",
+    "layer": null,
+    "relevant": [
+      "deployment/env-variables-reference.md",
+      "structure/module-refund.md"
+    ]
+  },
+  {
+    "id": "q-exact-process-refund-fn",
+    "text": "processRefund",
+    "kind": "exact",
+    "layer": null,
+    "relevant": [
+      "structure/module-refund.md",
+      "convention/naming-convention.md"
+    ]
+  },
+  {
+    "id": "q-exact-max-retry-const",
+    "text": "MAX_RETRY_ATTEMPTS",
+    "kind": "exact",
+    "layer": null,
+    "relevant": [
+      "structure/module-payment-identifiers.md",
+      "business-logic/payment-retry-policy.md"
+    ]
+  },
+  {
+    "id": "q-exact-refund-already-processed",
+    "text": "REFUND_ALREADY_PROCESSED",
+    "kind": "exact",
+    "layer": null,
+    "relevant": [
+      "convention/api-response-format.md",
+      "convention/error-code-convention.md",
+      "business-logic/refund-policy.md"
+    ]
+  },
+  {
+    "id": "q-keyword-branch-naming",
+    "text": "ตั้งชื่อ branch ticket",
+    "kind": "keyword",
+    "layer": null,
+    "relevant": ["convention/branch-naming.md"]
+  },
+  {
+    "id": "q-keyword-database-migration",
+    "text": "migration ตารางใหญ่ DBA",
+    "kind": "keyword",
+    "layer": null,
+    "relevant": ["deployment/database-migration-runbook.md"]
+  },
+  {
+    "id": "q-keyword-loyalty-points-tier",
+    "text": "คะแนนสะสม multiplier tier",
+    "kind": "keyword",
+    "layer": null,
+    "relevant": [
+      "business-logic/loyalty-points-calculation.md",
+      "business-logic/customer-tier-benefits.md"
+    ]
+  },
+  {
+    "id": "q-keyword-fraud-flagged",
+    "text": "order flagged ทีม risk ตรวจสอบ",
+    "kind": "keyword",
+    "layer": null,
+    "relevant": [
+      "business-logic/fraud-detection-rules.md",
+      "support-cases/case-4015.md"
+    ]
+  },
+  {
+    "id": "q-keyword-scaling-replica",
+    "text": "autoscaling replica CPU threshold",
+    "kind": "keyword",
+    "layer": null,
+    "relevant": ["deployment/scaling-policy.md"]
+  },
+  {
+    "id": "q-semantic-refund-timeout",
+    "text": "ลูกค้าขอคืนเงินแล้วระบบค้าง",
+    "kind": "semantic",
+    "layer": null,
+    "relevant": [
+      "business-logic/refund-timeout-policy.md",
+      "support-cases/case-2891.md",
+      "structure/module-refund.md"
+    ]
+  },
+  {
+    "id": "q-semantic-cancel-order",
+    "text": "อยากไม่เอาของแล้วหลังจ่ายเงินไปแล้ว ทำยังไงได้บ้าง",
+    "kind": "semantic",
+    "layer": null,
+    "relevant": [
+      "business-logic/order-cancellation-policy.md",
+      "support-cases/case-3012.md"
+    ]
+  },
+  {
+    "id": "q-semantic-card-rejected",
+    "text": "จ่ายเงินด้วยบัตรแล้วไม่ผ่านซ้ำๆ ควรทำยังไง",
+    "kind": "semantic",
+    "layer": null,
+    "relevant": [
+      "business-logic/payment-retry-policy.md",
+      "support-cases/case-3210.md"
+    ]
+  },
+  {
+    "id": "q-semantic-subscription-lost",
+    "text": "สมัครสมาชิกรายเดือนไว้แต่จู่ๆ ใช้งานไม่ได้",
+    "kind": "semantic",
+    "layer": null,
+    "relevant": [
+      "business-logic/subscription-billing-cycle.md",
+      "support-cases/case-3902.md"
+    ]
+  },
+  {
+    "id": "q-semantic-price-includes-vat",
+    "text": "ราคาที่เห็นหน้าเว็บรวมภาษีหรือยัง",
+    "kind": "semantic",
+    "layer": null,
+    "relevant": ["business-logic/tax-calculation.md"]
+  },
+  {
+    "id": "q-filtered-timeout-deployment",
+    "text": "timeout",
+    "kind": "filtered",
+    "layer": "deployment",
+    "relevant": ["deployment/connection-timeout-tuning.md"]
+  },
+  {
+    "id": "q-filtered-timeout-business",
+    "text": "timeout",
+    "kind": "filtered",
+    "layer": "business-logic",
+    "relevant": ["business-logic/refund-timeout-policy.md"]
+  },
+  {
+    "id": "q-filtered-refund-support-case",
+    "text": "คืนเงิน",
+    "kind": "filtered",
+    "layer": "support-case",
+    "relevant": [
+      "support-cases/case-2891.md",
+      "support-cases/case-3401.md",
+      "support-cases/case-3344.md"
+    ]
+  },
+  {
+    "id": "q-filtered-payment-structure",
+    "text": "payment",
+    "kind": "filtered",
+    "layer": "structure",
+    "relevant": [
+      "structure/module-payment.md",
+      "structure/module-payment-identifiers.md"
+    ]
+  },
+  {
+    "id": "q-filtered-scaling-deployment",
+    "text": "scaling",
+    "kind": "filtered",
+    "layer": "deployment",
+    "relevant": ["deployment/scaling-policy.md"]
+  }
+]
