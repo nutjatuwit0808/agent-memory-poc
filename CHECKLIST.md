@@ -6,7 +6,7 @@
 
 **กติกา:** ติ๊ก `[x]` ได้ต่อเมื่อผ่าน DoD ทุกข้อในไฟล์แผน — ห้ามติ๊กเพราะ "เขียนโค้ดเสร็จแล้ว"
 
-ความคืบหน้า: **36 / 36** ✅ ครบทุก workshop (Phase 0 + Workshop 01–05)
+ความคืบหน้า: **36 / 62** — Phase 0 + Workshop 01–05 เสร็จครบ ✅ · Workshop 06–09 (retrieval แบบอื่น) และ 10 (MCP server) ยังไม่เริ่ม
 
 ---
 
@@ -117,6 +117,78 @@
 - ยืนยันขอบเขตด้วย grep: `web/` ไม่ import อะไรจาก `src/`, ไม่มี `.sort()`, ไม่มีการคำนวณคะแนน — ที่ grep เจอคำว่า bm25/RRF ล้วนเป็นคอมเมนต์กับข้อความอธิบายบนหน้าจอ ส่วนตัวเลขมาจาก server ทั้งหมด
 - `recall@5` คำนวณฝั่ง server ด้วยสูตรเดียวกับ `bench.ts` (ตั้งใจไม่ให้ UI คำนวณเอง เพราะถ้าเพี้ยนกันแม้นิดเดียวตัวเลขจะไม่ตรงกับ README ของ workshop ก่อนหน้า)
 - `next dev` v16 สร้าง `AGENTS.md`/`CLAUDE.md` ใน `web/` อัตโนมัติ — ปิดด้วย `agentRules: false` เพราะชนกับคอนเวนชันที่ `CLAUDE.md` ที่ root คือสัญญาการออกแบบตัวจริง
+
+---
+
+## ส่วนขยาย — retrieval แบบอื่น (ยังไม่เริ่ม) → [แผน](plans/README.md)
+
+> มาจากการสำรวจว่าปัจจุบันมี retrieval แบบไหนอีกนอกจาก 4 แบบที่ทำไปแล้ว
+> **ทั้ง 4 phase ยังไม่อนุมัติให้เริ่ม** — แต่ละตัวมี decision/ความเสี่ยงที่ต้องเคลียร์ใน task แรกก่อน
+
+### Workshop 06 — Graph traversal → [แผน](plans/06-graph-traversal.md)
+
+> ✅ ไม่ต้องเพิ่ม dependency เลย — ใช้ `note.links` ที่ `core/` parse ไว้ตั้งแต่ P0-3 แต่ไม่มี backend ไหนแตะตลอด WS01–05
+
+- [ ] **W6-1** ขยาย query set ด้วย `multi-hop` ≥5 ข้อ + วัด baseline (ห้ามข้าม)
+- [ ] **W6-2** `link-graph.ts` — adjacency + backlink + สถิติกราฟ
+- [ ] **W6-3** `graph.backend.ts` — seed จาก backend เดิม แล้วขยายตาม link
+- [ ] **W6-4** วัดผล — multi-hop ดีขึ้นแค่ไหน / single-hop แย่ลงแค่ไหน
+- [ ] **W6-5** README
+
+**Gate:** ตอบได้ว่ากราฟที่คนเขียนเอง คุ้มกว่าหรือแย่กว่ากราฟที่ LLM สกัดให้
+
+### Workshop 07 — Cross-encoder reranking → [แผน](plans/07-reranking.md)
+
+> ⚠️ precision@5 ของ `router-fuse` = 0.33 ซึ่งเป็น **89% ของเพดานทฤษฎี (0.37)** อยู่แล้ว — อาจไม่มีที่ให้ rerank ปรับปรุง
+
+- [ ] **W7-1** พิสูจน์ headroom ด้วย oracle ceiling ก่อน (ขยาย query set ถ้าจำเป็น)
+- [ ] **W7-2** Spike — หา cross-encoder ที่รองรับไทย (`ms-marco` เป็น English-only)
+- [ ] **W7-3** `rerank.backend.ts` — 2-stage + แยก `stage1Ms`/`rerankMs`
+- [ ] **W7-4** วัด trade-off ของ topN (5/10/20/50)
+- [ ] **W7-5** README
+
+**Gate:** ตอบได้ว่า reranking คุ้มไหมที่ vault ขนาดนี้ ("ไม่คุ้ม" เป็นคำตอบที่ยอมรับได้ถ้ามีตัวเลข)
+
+### Workshop 08 — Learned sparse (SPLADE) → [แผน](plans/08-learned-sparse.md)
+
+- [ ] **W8-1** Spike — หาโมเดล multilingual + ทดสอบ term expansion ภาษาไทย
+- [ ] **W8-2** Schema `sparse_terms` ต่อยอดจาก SQLite เดิมของ WS02
+- [ ] **W8-3** `splade.backend.ts` + diagnostic บอกว่า match เพราะ term ไหน
+- [ ] **W8-4** วัดผล 4 ทาง: BM25 / dense / SPLADE / hybrid
+- [ ] **W8-5** README
+
+**Gate:** `semantic` recall ขยับจาก 0.07 ได้แค่ไหน และ `filtered` (0.80) ดีขึ้นไหม
+
+### Workshop 09 — Late interaction (ColBERT) → [แผน](plans/09-late-interaction.md)
+
+> ⚠️ ประเมินแล้ว index จะใหญ่ขึ้น **~80 เท่า** (350KB → ~28MB) และต้องระวังไม่ตกหลุมเดิมกับ WS03 (PQ ทำ recall พังเหลือ 0.20)
+
+- [ ] **W9-1** Spike — หา ColBERT checkpoint multilingual + วัดขนาด index จริง
+- [ ] **W9-2** ขยาย embedding cache ให้เก็บ multi-vector
+- [ ] **W9-3** `colbert.backend.ts` + MaxSim เขียนเอง
+- [ ] **W9-4** วัดผล — โดยเฉพาะ `exact` ที่ dense ได้แค่ 0.47
+- [ ] **W9-5** README
+
+**Gate:** สรุปสเปกตรัมทั้งหมดได้ พร้อมตัวเลขจริงทุกตัว
+
+---
+
+## Workshop 10 — MCP server (ใช้ใน Cursor) → [แผน](plans/10-mcp-server.md)
+
+> ✅ **D-11/D-12/D-13 ตัดสินแล้ว (2026-08-23):** วัดผล + ใช้งานจริง · read-only · วัดฝั่งเราละเอียดแล้วเทียบ Cursor เชิงคุณภาพ
+> ⚠️ **D-14 ยังไม่ตัดสิน** — เขียน JSON-RPC เอง (เสนอ) vs `@modelcontextprotocol/sdk` · ให้ตัดสินด้วยผลจาก W10-1
+> **ทำแยกจาก Workshop 06–09 ได้เลย** ใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04
+
+- [ ] **W10-1** Spike — ต่อ Cursor ให้ติดด้วย tool เดียว + ตัดสิน D-14 จากผลจริง
+- [ ] **W10-2** `src/cli/mcp.ts` — tools `search_memory` / `get_memory` (read-only)
+- [ ] **W10-3** วัดต้นทุนฝั่งเรา — MCP overhead ต่อ query + cold start (stdio vs HTTP)
+- [ ] **W10-4** เทียบคุณภาพกับ Cursor indexing ด้วย ground truth (10 query, ทำมือ)
+- [ ] **W10-5** Packaging + จัดการ index stale (ใช้จริงอย่างน้อย 1 วันทำงาน)
+- [ ] **W10-6** README
+
+**Gate:** ตอบได้ด้วยตัวเลขว่าประสิทธิภาพจาก WS01–05 ตามมาถึง Cursor ไหม หรือถูก MCP overhead กลบ
+
+**ข้อจำกัดที่ต้องเขียนกำกับไว้ตลอด:** Cursor indexing เป็นกล่องดำ — **ห้ามเคลม** ว่า MCP เร็วกว่า/ช้ากว่ากี่เท่า · เคลมได้แค่ overhead ฝั่งเรา (วัดเองได้) กับคุณภาพการดึงเอกสาร (มี ground truth อยู่แล้ว)
 
 ---
 

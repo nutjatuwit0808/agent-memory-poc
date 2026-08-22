@@ -11,7 +11,30 @@
 | 2 | [02-fts5.md](02-fts5.md) | inverted index + staleness | 1 |
 | 3 | [03-vector.md](03-vector.md) | embedding + cosine + ANN | 2 |
 | 4 | [04-router.md](04-router.md) | hybrid routing + fusion | 3 |
-| 5 | [05-frontend.md](05-frontend.md) | UI เปรียบเทียบ backend แบบพิมพ์ query เอง | 4 · **ยังไม่อนุมัติ D-6/D-7/D-8** |
+| 5 | [05-frontend.md](05-frontend.md) | UI เปรียบเทียบ backend แบบพิมพ์ query เอง | 4 |
+
+## ส่วนขยาย — retrieval แบบอื่นที่ยังไม่ได้ทำ (ยังไม่เริ่ม)
+
+สี่แผนนี้มาจากการสำรวจว่าปัจจุบันมี retrieval แบบไหนอีกบ้างนอกจาก 4 แบบที่ทำไปแล้ว **เรียงตามความคุ้ม/ความเสี่ยง ไม่ใช่ตามลำดับที่ค้นเจอ**
+
+| Phase | ไฟล์ | โฟกัส | dependency ใหม่ | ความเสี่ยงหลัก |
+|---|---|---|---|---|
+| 6 | [06-graph-traversal.md](06-graph-traversal.md) | เดินตาม wikilink ที่ `core/` parse ไว้แล้วแต่ไม่มีใครใช้ | **ไม่มีเลย** | ต้องเพิ่ม multi-hop query ก่อน ไม่งั้นวัดไม่เห็นอะไร |
+| 7 | [07-reranking.md](07-reranking.md) | cross-encoder จัดอันดับใหม่ (2-stage) | โมเดล (ใช้ dep เดิมได้) | precision@5 อยู่ที่ 89% ของเพดานแล้ว อาจไม่มีที่ให้ปรับปรุง |
+| 8 | [08-learned-sparse.md](08-learned-sparse.md) | SPLADE — sparse ที่เรียนรู้ term expansion | โมเดล | multilingual หายาก · อาจแพ้ BM25 ถ้าไม่ train เอง |
+| 9 | [09-late-interaction.md](09-late-interaction.md) | ColBERT — เก็บเวกเตอร์ทุก token + MaxSim | โมเดล (ColBERT checkpoint) | index ใหญ่ขึ้น ~80 เท่า |
+
+## ส่วนขยาย — เอาไปใช้จริงนอกโปรเจกต์ (ยังไม่เริ่ม)
+
+| Phase | ไฟล์ | โฟกัส | dependency ใหม่ | ความเสี่ยงหลัก |
+|---|---|---|---|---|
+| 10 | [10-mcp-server.md](10-mcp-server.md) | ใช้ vault เป็น memory ใน Cursor ผ่าน MCP + วัดว่า overhead กลบความเร็วไหม | ยังไม่ตัดสิน (D-14) | Cursor indexing เป็นกล่องดำ — เทียบ latency ตรงๆ ไม่ได้ |
+
+**ทำ Phase 10 แยกจาก 6–9 ได้เลย** ไม่ต้องรอ — มันใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04 ไม่ได้พึ่ง retrieval แบบใหม่
+
+**ทำไมเรียงแบบนี้:** Phase 6 ไม่ต้องเพิ่ม dependency สักตัวและใช้ของที่มีอยู่แล้ว (`note.links`) จึงคุ้มที่สุด · Phase 6 ยังเพิ่ม multi-hop query เข้า `bench/queries.json` ซึ่ง phase หลังใช้ต่อได้ · Phase 9 หนักสุดและเสี่ยงตกหลุมเดิมกับ WS03 (PQ ทำ recall พัง) จึงไว้ท้ายสุด
+
+**สิ่งที่ตั้งใจไม่ทำ** — HyDE, query rewriting, multi-query fusion, agentic retrieval (Self-RAG/FLARE): ทั้งกลุ่มนี้ต้องเรียก LLM ในเส้นทางตัดสินใจ ซึ่ง**ขัด CLAUDE.md §2.1 โดยตรง** · GraphRAG แบบสกัด entity ด้วย LLM ก็ขัด §1 เช่นกัน (Phase 6 จึงใช้ wikilink ที่คนเขียนเองแทน)
 
 สถานะทุก task อยู่ที่ [`../CHECKLIST.md`](../CHECKLIST.md) — **อัปเดตที่นั่นที่เดียว** ไฟล์แผนไม่เก็บสถานะ
 
