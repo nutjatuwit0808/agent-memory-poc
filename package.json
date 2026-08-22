@@ -9,6 +9,7 @@
   "scripts": {
     "bench": "tsx src/cli/bench.ts",
     "reindex": "tsx src/cli/reindex.ts",
+    "serve": "tsx src/cli/serve.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/search/router.test.ts"
   },

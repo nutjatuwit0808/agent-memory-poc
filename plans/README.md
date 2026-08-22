@@ -11,6 +11,7 @@
 | 2 | [02-fts5.md](02-fts5.md) | inverted index + staleness | 1 |
 | 3 | [03-vector.md](03-vector.md) | embedding + cosine + ANN | 2 |
 | 4 | [04-router.md](04-router.md) | hybrid routing + fusion | 3 |
+| 5 | [05-frontend.md](05-frontend.md) | UI เปรียบเทียบ backend แบบพิมพ์ query เอง | 4 · **ยังไม่อนุมัติ D-6/D-7/D-8** |
 
 สถานะทุก task อยู่ที่ [`../CHECKLIST.md`](../CHECKLIST.md) — **อัปเดตที่นั่นที่เดียว** ไฟล์แผนไม่เก็บสถานะ
 

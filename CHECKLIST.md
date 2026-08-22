@@ -6,7 +6,7 @@
 
 **กติกา:** ติ๊ก `[x]` ได้ต่อเมื่อผ่าน DoD ทุกข้อในไฟล์แผน — ห้ามติ๊กเพราะ "เขียนโค้ดเสร็จแล้ว"
 
-ความคืบหน้า: **30 / 30** ✅ ครบทุก workshop
+ความคืบหน้า: **36 / 36** ✅ ครบทุก workshop (Phase 0 + Workshop 01–05)
 
 ---
 
@@ -94,6 +94,29 @@
 - เจอปัญหา whitespace word-count กับข้อความไทยอีกครั้ง (ครั้งที่ 3 ของโปรเจกต์ ต่อจาก `vault-reader.ts` และ FTS5 tokenizer) ใน query classifier — unit test จับได้ทันที แก้ด้วย heuristic เดียวกับ P0
 - `core/` ยืนยันไม่ถูกแก้เลยตั้งแต่ Phase 0 จนจบ Workshop 04 (เช็ค mtime ของทั้ง 3 ไฟล์ใน `src/core/` คงที่ตลอด — ไม่มี git ในโปรเจกต์นี้จึงใช้ file timestamp แทน git log)
 - ไม่มี test framework ใหม่ถูกเพิ่ม — ใช้ Node built-in `node:test` + `node:assert` (ไม่ต้องขอ dependency เพิ่ม)
+
+---
+
+## Workshop 05 — Frontend comparison UI → [แผน](plans/05-frontend.md)
+
+> ✅ **D-6/D-7/D-8 อนุมัติแล้ว (2026-08-22):** Next.js + React (แยก `package.json` ใน `web/`) · แยก process ผ่าน HTTP · CSS ธรรมดา
+> workshop นี้อยู่นอก scope เดิมของโปรเจกต์ (search backend comparison) — เป็น visualization layer ไม่ใช่กลไก memory
+> **เส้นที่ห้ามข้าม:** `web/` ห้าม import อะไรจาก `src/` ยกเว้น type — ทุกการค้นหาต้องผ่าน HTTP
+
+- [x] **W5-1** Search server `src/cli/serve.ts` — node:http, warm-up, engineMs แยกจาก round-trip
+- [x] **W5-2** Next.js scaffold ใน `web/` — แยก package.json ไม่ปนกับ root
+- [x] **W5-3** หน้าเปรียบเทียบ 5 คอลัมน์ + ไฮไลต์ผลที่ไม่ซ้ำกัน
+- [x] **W5-4** Ground truth overlay — preset 20 query + recall@5 สด
+- [x] **W5-5** Filter panel + router explainer (routedBy + ตาราง RRF)
+- [x] **W5-6** README + ยืนยันว่า `src/` เดิมไม่ถูกแก้ และ `web/` ไม่มี logic ค้นหา
+
+**Gate:** ตอบได้ว่า UI ทำให้เข้าใจอะไรที่ตาราง bench ไม่ได้บอก ✅ — (1) "ไม่พบผลลัพธ์เลย" ต่างจาก "recall 0.07" คนละเรื่องเมื่อเห็นบนจอ (2) แถบเหลืองเผยว่าตอน vector แพ้ มันไปเจอของผิดมาอย่างมั่นใจ ไม่ใช่แค่หาไม่เจอ (3) overhead คงที่ 15ms กลบความเร็ว 87 เท่าของ fts5 ให้เหลือ 3.2 เท่า ดู [workshops/05-frontend/README.md](workshops/05-frontend/README.md)
+
+**หมายเหตุจาก Workshop 05:**
+- เพิ่มเข้า `src/` แค่ 2 อย่าง ทั้งคู่ additive: ไฟล์ใหม่ `cli/serve.ts` และ `router.ts` เพิ่ม `fuseRRFWithBreakdown()`/`getLastFusion()` โดย **`fuseRRF()` signature ไม่เปลี่ยน** และ unit test เดิม 11 ตัวยังผ่านครบ
+- ยืนยันขอบเขตด้วย grep: `web/` ไม่ import อะไรจาก `src/`, ไม่มี `.sort()`, ไม่มีการคำนวณคะแนน — ที่ grep เจอคำว่า bm25/RRF ล้วนเป็นคอมเมนต์กับข้อความอธิบายบนหน้าจอ ส่วนตัวเลขมาจาก server ทั้งหมด
+- `recall@5` คำนวณฝั่ง server ด้วยสูตรเดียวกับ `bench.ts` (ตั้งใจไม่ให้ UI คำนวณเอง เพราะถ้าเพี้ยนกันแม้นิดเดียวตัวเลขจะไม่ตรงกับ README ของ workshop ก่อนหน้า)
+- `next dev` v16 สร้าง `AGENTS.md`/`CLAUDE.md` ใน `web/` อัตโนมัติ — ปิดด้วย `agentRules: false` เพราะชนกับคอนเวนชันที่ `CLAUDE.md` ที่ root คือสัญญาการออกแบบตัวจริง
 
 ---
 

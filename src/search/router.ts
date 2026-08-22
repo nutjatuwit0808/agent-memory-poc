@@ -90,17 +90,41 @@ const RRF_K = 60;
  * ครอบงำมากเกินไปเหมือน 1/rank ตรงๆ)
  */
 export function fuseRRF(resultSets: { backend: string; results: SearchResult[] }[], limit?: number): SearchResult[] {
+  return fuseRRFWithBreakdown(resultSets, limit).results;
+}
+
+/** ที่มาของคะแนน RRF ของ note หนึ่งตัว — แยกทีละ backend ให้ตรวจสอบเลขตามด้วยมือได้ */
+export interface FusionContribution {
+  noteId: string;
+  perBackend: { backend: string; rank: number; contribution: number }[];
+  total: number;
+}
+
+/**
+ * เหมือน `fuseRRF` ทุกประการ แต่คืน breakdown ของที่มาคะแนนมาด้วย — มีไว้ให้ UI/CLI
+ * แสดงว่าคะแนนสุดท้ายประกอบมาจากอันดับไหนของ backend ใดบ้าง โดย**ไม่ต้องไปคำนวณสูตรซ้ำ
+ * เองที่ฝั่งผู้เรียก** (ถ้าผู้เรียกคำนวณเอง เลขที่โชว์จะกลายเป็นเลขคนละชุดกับที่ router ใช้จริง)
+ */
+export function fuseRRFWithBreakdown(
+  resultSets: { backend: string; results: SearchResult[] }[],
+  limit?: number
+): { results: SearchResult[]; breakdown: FusionContribution[] } {
   const scoreByNoteId = new Map<string, number>();
   const noteById = new Map<string, MemoryNote>();
   const matchedByNoteId = new Map<string, SearchResult["matchedBy"]>();
+  const contributionsByNoteId = new Map<string, FusionContribution["perBackend"]>();
 
-  for (const { results } of resultSets) {
+  for (const { backend, results } of resultSets) {
     results.forEach((r, index) => {
       const rank = index + 1;
       const rrfScore = 1 / (RRF_K + rank);
       scoreByNoteId.set(r.note.id, (scoreByNoteId.get(r.note.id) ?? 0) + rrfScore);
       noteById.set(r.note.id, r.note);
       if (!matchedByNoteId.has(r.note.id)) matchedByNoteId.set(r.note.id, r.matchedBy);
+
+      const perBackend = contributionsByNoteId.get(r.note.id) ?? [];
+      perBackend.push({ backend, rank, contribution: rrfScore });
+      contributionsByNoteId.set(r.note.id, perBackend);
     });
   }
 
@@ -111,7 +135,15 @@ export function fuseRRF(resultSets: { backend: string; results: SearchResult[] }
   }));
 
   fused.sort((a, b) => b.score - a.score);
-  return limit ? fused.slice(0, limit) : fused;
+  const limited = limit ? fused.slice(0, limit) : fused;
+
+  const breakdown: FusionContribution[] = limited.map((r) => ({
+    noteId: r.note.id,
+    perBackend: contributionsByNoteId.get(r.note.id) ?? [],
+    total: r.score,
+  }));
+
+  return { results: limited, breakdown };
 }
 
 export interface RouterOptions {
@@ -135,6 +167,7 @@ export class RouterBackend implements SearchBackend {
   private readonly mode: "route" | "fuse";
   private readonly backends: Record<string, SearchBackend>;
   private lastRouting: LastRouting | undefined;
+  private lastFusion: FusionContribution[] | undefined;
 
   constructor(options: RouterOptions) {
     this.name = options.name ?? `router-${options.mode}`;
@@ -152,6 +185,7 @@ export class RouterBackend implements SearchBackend {
       const backend = this.backends[rule.backend];
       if (!backend) throw new Error(`[router] ไม่พบ backend "${rule.backend}" ที่กฎ "${rule.id}" ต้องการ`);
       this.lastRouting = { mode: "route", ruleId: rule.id, backendsQueried: [rule.backend] };
+      this.lastFusion = undefined;
       return backend.search(query);
     }
 
@@ -160,12 +194,20 @@ export class RouterBackend implements SearchBackend {
       entries.map(async ([name, backend]) => ({ backend: name, results: await backend.search(query) }))
     );
     this.lastRouting = { mode: "fuse", ruleId: "fuse-all", backendsQueried: entries.map(([name]) => name) };
-    return fuseRRF(resultSets, query.limit);
+
+    const { results, breakdown } = fuseRRFWithBreakdown(resultSets, query.limit);
+    this.lastFusion = breakdown;
+    return results;
   }
 
   /** diagnostic เท่านั้น ไม่อยู่ใน SearchBackend interface — ให้ log/ตรวจสอบว่า routedBy อะไร */
   getLastRouting(): LastRouting | undefined {
     return this.lastRouting;
+  }
+
+  /** diagnostic เท่านั้น — ที่มาของคะแนน RRF ครั้งล่าสุด (undefined ถ้าอยู่ mode "route") */
+  getLastFusion(): FusionContribution[] | undefined {
+    return this.lastFusion;
   }
 
   async stats(): Promise<{ indexedCount: number; sizeBytes: number; buildTimeMs: number }> {
