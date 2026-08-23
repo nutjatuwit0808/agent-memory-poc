@@ -85,7 +85,7 @@ workshops/           README ผลการทดลองแต่ละบท 
 
 ---
 
-## 5. สิ่งที่ทดสอบ — 5 Workshop
+## 5. สิ่งที่ทดสอบ — 7 Workshop
 
 ### Workshop 01 — ripgrep (search แบบไม่มี index)
 
@@ -114,14 +114,6 @@ workshops/           README ผลการทดลองแต่ละบท 
 ### Workshop 07 — Cross-encoder reranking (2-stage retrieval)
 
 ทดสอบว่า reranking (cross-encoder จัดอันดับใหม่จาก candidate ที่ backend เดิมคัดมา) คุ้มไหมเมื่อ `router-fuse` แทบชนเพดานทฤษฎีอยู่แล้ว — คำนวณ oracle ceiling ก่อนพบว่า `fuse` มี gap = 0.000 (rerank ช่วยไม่ได้เลย) แต่ `vector` มี gap 0.073 โดยเฉพาะ query แบบ `exact` (identifier) ที่ gap สูงถึง 0.23 ลองจริงพบว่า `rerank(vector, topN=10)` ได้ recall 0.827 **ตรงกับ oracle ที่คำนวณไว้เป๊ะ** แต่แพงกว่า `router-fuse` มาก (topN=50 ชนะ recall ได้จริงแต่ช้ากว่า 114 เท่า) → [รายละเอียด](workshops/07-reranking/README.md)
-
-### Workshop 08 — Learned sparse (SPLADE) — 🛑 บล็อก
-
-หา multilingual SPLADE ที่มี ONNX ให้ transformers.js โหลดได้จริงไม่เจอเลย — `BAAI/bge-m3` รองรับไทยและมี sparse mode จริง แต่ ONNX export ทุกตัวที่หามีแค่ dense path ส่วน sparse head อยู่แยกเป็นไฟล์ PyTorch pickle ที่ stack นี้โหลดไม่ได้ รอผู้ใช้ตัดสินใจทิศทางต่อไป
-
-### Workshop 09 — Late interaction (ColBERT) — 🛑 หยุดกลางทาง (negative result)
-
-ต่างจาก WS08 — หา checkpoint ได้จริง (`jinaai/jina-colbert-v2`, ยืนยันรองรับไทย) แต่ไฟล์ ONNX จริงใหญ่ถึง **2.1GB** (16 เท่าของโมเดลอื่นในโปรเจกต์) และมีความเสี่ยงว่า ONNX export จะให้แค่ raw encoder output ไม่ใช่ ColBERT projection จริง (custom architecture ไม่ผ่าน auto_map มาตรฐาน) — ตัดสินใจบันทึกเป็นผลการค้นคว้าแล้วไม่ดาวน์โหลด → [รายละเอียด](workshops/09-late-interaction/README.md)
 
 ---
 

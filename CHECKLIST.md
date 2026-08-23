@@ -6,7 +6,7 @@
 
 **กติกา:** ติ๊ก `[x]` ได้ต่อเมื่อผ่าน DoD ทุกข้อในไฟล์แผน — ห้ามติ๊กเพราะ "เขียนโค้ดเสร็จแล้ว"
 
-ความคืบหน้า: **55 / 69** — Phase 0 + Workshop 01–07 เสร็จครบ ✅ · Workshop 08 บล็อกรอผู้ใช้ตัดสินใจ · Workshop 09 หยุดกลางทางตามคำสั่งผู้ใช้ (บันทึกผลลบแล้ว, 3 task ข้าม) · Workshop 10 (MCP server) ยังไม่เริ่ม
+ความคืบหน้า: **57 / 59** — Phase 0 + Workshop 01–07 เสร็จครบ ✅ · Workshop 08–09 ถอดออกจากแผนแล้ว (ต้องพึ่ง ML model เพิ่ม) · Workshop 10 (MCP server) กำลังทำ — W10-1 ถึง W10-4 เสร็จ, เหลือ W10-5 (packaging + stale) กับ W10-6 (README)
 
 ---
 
@@ -164,42 +164,10 @@
 - ไม่พบเคสที่ rerank ทำให้แย่ลงแม้แต่ตัวเดียว (ทดสอบครบ 3 backend × 25 query ที่ topN=5) — รายงานตรงๆ ว่า query set นี้อาจยังไม่มีเคสกำกวมพอ ไม่ได้แปลว่า reranking ไม่มีความเสี่ยงเลย
 - `rerank` **ไม่ได้** register เข้า `backends/index.ts` (topN≥20 ทำให้ `npm run bench` ช้าเกินไป) — เก็บเป็น backend ที่ทดสอบแล้วจริงแต่เรียกแยก เหมือน LanceDB ANN ใน WS03
 
-### Workshop 08 — Learned sparse (SPLADE) → [แผน](plans/08-learned-sparse.md)
-
-> ⚠️ **บล็อกอยู่ที่ W8-1 (2026-08-23) — รอผู้ใช้ตัดสินใจ ยังไม่เลือกทางไหน**
-> ค้นหาแล้วไม่พบ multilingual SPLADE ที่มี ONNX ให้ transformers.js โหลดได้จริง:
-> `BAAI/bge-m3` รองรับ 100+ ภาษา (รวมไทย) และมี sparse mode จริง แต่ ONNX export ทุกตัวที่หาเจอ
-> (`Xenova/bge-m3`, `aapot/bge-m3-onnx` ฯลฯ) มีแค่ dense path — sparse head อยู่แยกเป็นไฟล์
-> `sparse_linear.pt` (PyTorch pickle) ที่ stack นี้ไม่มีทางโหลดได้โดยไม่เพิ่ม tooling ใหญ่
-> `naver/splade-v3` (ตัวหลักของวงการ) เป็น English-only และไม่มี ONNX เลยด้วยซ้ำ
-> ถามผู้ใช้แล้วว่าจะ (ก) บันทึกเป็นผลลบแล้วข้ามไป WS09 หรือ (ข) ลอง English-only เพื่อโชว์กลไก
-> — ผู้ใช้ยังไม่เลือก ต้องถามใหม่ก่อนเดินหน้าต่อ
-
-- [ ] **W8-1** Spike — หาโมเดล multilingual + ทดสอบ term expansion ภาษาไทย
-- [ ] **W8-2** Schema `sparse_terms` ต่อยอดจาก SQLite เดิมของ WS02
-- [ ] **W8-3** `splade.backend.ts` + diagnostic บอกว่า match เพราะ term ไหน
-- [ ] **W8-4** วัดผล 4 ทาง: BM25 / dense / SPLADE / hybrid
-- [ ] **W8-5** README
-
-**Gate:** `semantic` recall ขยับจาก 0.07 ได้แค่ไหน และ `filtered` (0.80) ดีขึ้นไหม
-
-### Workshop 09 — Late interaction (ColBERT) → [แผน](plans/09-late-interaction.md)
-
-> 🛑 **หยุดที่ W9-1 (2026-08-23) — ตัดสินใจไม่ทำต่อ ไม่ใช่ทำไม่ได้**
-> หา checkpoint multilingual+ONNX เจอจริง (`jinaai/jina-colbert-v2`, มี `th` ในรายการภาษา) ต่างจาก WS08
-> แต่ไฟล์ ONNX weights จริง (resolve ผ่าน LFS แล้ว) = **2.1GB** ใหญ่กว่าโมเดลอื่นในโปรเจกต์ ~16 เท่า
-> และมีความเสี่ยงจริงว่า ONNX export จะให้แค่ raw XLM-RoBERTa-large hidden state (1024 dim)
-> ไม่ใช่ ColBERT projection output จริง (128 dim ตาม README) เพราะ `auto_map` ชี้ `AutoModel`
-> ไปที่ `XLMRobertaModel` ธรรมดา ไม่ใช่ custom class `HF_ColBERT` ที่ config ประกาศไว้
-> ผู้ใช้ตัดสินใจ: บันทึกเป็นผลลบ ไม่ดาวน์โหลด ข้ามไป Workshop 10 — รายละเอียดเต็มใน README
-
-- [x] **W9-1** Spike — หา ColBERT checkpoint multilingual + วัดขนาด index จริง *(หยุดที่นี่ตามคำสั่งผู้ใช้)*
-- [ ] ~~**W9-2** ขยาย embedding cache ให้เก็บ multi-vector~~ ไม่ทำ (ผลจาก W9-1)
-- [ ] ~~**W9-3** `colbert.backend.ts` + MaxSim เขียนเอง~~ ไม่ทำ
-- [ ] ~~**W9-4** วัดผล — โดยเฉพาะ `exact` ที่ dense ได้แค่ 0.47~~ ไม่ทำ
-- [x] **W9-5** README — เขียนเป็นบันทึกผลการค้นคว้า (negative result) แทนผลวัด
-
-**Gate:** ไม่ผ่าน — บันทึกเหตุผลที่หยุดไว้แทน ดู [workshops/09-late-interaction/README.md](workshops/09-late-interaction/README.md)
+> **Workshop 08 (Learned sparse/SPLADE) และ Workshop 09 (Late interaction/ColBERT) ถูกถอดออกจากแผนแล้ว (2026-08-23)**
+> ทั้งสองติดอยู่ที่จุดที่ต้องพึ่ง ML model เพิ่มเพื่อตัดสินใจว่าทำต่อได้ไหม (WS08 หา multilingual SPLADE
+> ที่มี ONNX ใช้จริงไม่เจอ, WS09 หาเจอแต่ไฟล์ใหญ่ 2.1GB และมีความเสี่ยงเรื่อง ONNX output ไม่ตรง)
+> ตัดสินใจไม่ผูกความคืบหน้าของโปรเจกต์ไว้กับการหาโมเดลเพิ่มอีก — ลบแผนและ README ที่เกี่ยวข้องออกแล้ว
 
 ---
 
@@ -207,11 +175,26 @@
 
 > ✅ **D-11/D-12/D-13/D-14 ตัดสินครบแล้ว (2026-08-23):** วัดผล + ใช้งานจริง · read-only · วัดฝั่งเราละเอียดแล้วเทียบ Cursor เชิงคุณภาพ · **เขียน JSON-RPC เองก่อน** (SDK เป็น fallback ที่อนุมัติล่วงหน้าแล้ว ถ้า W10-1 ต่อไม่ติด)
 > **ทำแยกจาก Workshop 06–09 ได้เลย** ใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04
+> **D-14 ยืนยันจากผลจริง:** ต่อ Cursor ติดตั้งแต่รอบแรกด้วย JSON-RPC ที่เขียนเอง (เห็นสถานะ Connected + "1 tool enabled" ใน Cursor Settings → Tools & MCPs) — **ไม่ต้องสลับไป SDK**
 
-- [ ] **W10-1** Spike — ต่อ Cursor ให้ติดด้วย tool เดียว + ตัดสิน D-14 จากผลจริง
-- [ ] **W10-2** `src/cli/mcp.ts` — tools `search_memory` / `get_memory` (read-only)
-- [ ] **W10-3** วัดต้นทุนฝั่งเรา — MCP overhead ต่อ query + cold start (stdio vs HTTP)
-- [ ] **W10-4** เทียบคุณภาพกับ Cursor indexing ด้วย ground truth (10 query, ทำมือ)
+- [x] **W10-1** Spike — ต่อ Cursor ให้ติดด้วย tool เดียว + ตัดสิน D-14 จากผลจริง (ยืนยันใน Cursor UI จริงแล้ว — server `memory-workshop` ขึ้น Connected)
+- [x] **W10-2** `src/cli/mcp.ts` — tools `search_memory` / `get_memory` (read-only) — ทดสอบผ่าน JSON-RPC ตรงๆ (initialize/tools-list/tools-call ทั้ง valid + error case: layer ผิด, id ไม่มี, query ว่าง) ยังไม่แก้ไฟล์เดิมใน `src/` เลย มีแค่ `mcp.ts` (ยืนยันด้วย `git status`)
+- [x] **W10-3** วัดต้นทุนฝั่งเรา — MCP overhead ต่อ query + cold start (stdio vs HTTP) — สคริปต์ `src/cli/bench-mcp.ts` (`npm run bench:mcp`) spawn `serve.ts`/`mcp.ts` จริงเป็น child process แล้ววัด 3 ชั้น (warmup 3 + วัด 20 เท่า `bench.ts`):
+  - **MCP overhead ล้วนๆ (ชั้น MCP tool call ลบ HTTP serve.ts): ~0.01ms = 1.5% ของ round-trip** — เกือบเป็นศูนย์ ต่างจาก WS05 ที่ HTTP+JSON เพิ่ม ~15–20ms ชัดเจน เพราะ MCP JSON-RPC เป็น HTTP+JSON ชั้นเดียวกันอยู่แล้ว (mcp.ts ก็ใช้ `node:http` เหมือน `serve.ts`) ไม่มี layer ใหม่มาซ้อนจริงๆ
+  - p50 ต่อ query kind (engine / HTTP serve.ts / MCP): exact 27.74/28.50/28.52ms (spawn `rg` subprocess ครอบงำ), keyword 0.19/0.75/0.75ms, semantic 0.15/0.67/0.69ms, filtered 0.06/0.52/0.53ms, multi-hop 0.16/0.69/0.69ms
+  - **cold start ไม่ต่างกันตามที่ W10-2 คาด:** stdio 615ms vs HTTP call แรก 628ms — ใกล้เคียงกันมาก เพราะ warm-up (index 6 backend + embedding cache ที่ disk) จ่ายเท่ากันไม่ว่า transport ไหน **ความต่างจริงไม่ใช่ latency ของการ warm-up แต่เป็นความถี่ที่ต้องจ่าย**: stdio ให้ Cursor spawn process ใหม่ทุกครั้งที่เปิด = จ่าย ~620ms ซ้ำทุก session, HTTP จ่ายครั้งเดียวตอน server เริ่มแล้วเรียกซ้ำที่ process เดิมได้เหลือแค่ ~30ms (steady state) ตลอดไป
+  - raw JSON: `data/bench-mcp-2026-08-23T09-04-19-123Z.json`
+- [x] **W10-4** เทียบคุณภาพกับ Cursor indexing ด้วย ground truth (10 query, ทำมือ) — ผลสรุปตามจริง 100% (ผู้ใช้เป็นคนถามใน Cursor เอง ผมคำนวณ/เทียบให้):
+  - **ตัวเลข MCP (router-route, สูตรเดียวกับ bench.ts):** recall@5 เฉลี่ย 10 query นี้ = **0.683**
+  - **ตัวเลข Cursor:** วัด 2 แบบต่อ query — "ตอบทันที" (spontaneous) vs "ถามย้ำว่าอ้างอิงไฟล์ไหน" (follow-up เดียวกัน tab) — spontaneous เฉลี่ย **0.675** (ใกล้เคียง MCP มาก), follow-up เฉลี่ย **1.00** (เจอ ground truth ครบทุกไฟล์ทุก query ที่ถามย้ำ 9/10 ข้อ — ข้อ 1 ไม่ได้ถามย้ำเพราะยังไม่ได้คิดวิธีนี้ตอนนั้น)
+  - **Key finding:** Cursor **รู้มากกว่าที่มันเลือก cite เอง** — spontaneous undercounts ของจริงที่มันค้นเจอ ต้องถามตรงๆ ถึงจะได้ citation ครบ นี่คือความต่างสำคัญจาก MCP ที่คืน id ไฟล์ตรงๆ ทุกครั้งไม่ต้องถามซ้ำ
+  - **เคสที่ MCP ชนะชัด:** query kind `exact`/`keyword` (q1-4) — MCP/router ได้ 1.00 ทุกข้อ (route ไป ripgrep/fts5 ที่ literal match แม่นกว่า) ขณะที่ Cursor spontaneous บนข้อ exact ได้แค่ 0.33-0.50 — สอดคล้องกับที่ WS01-03 เคยพบว่า identifier-like query แพ้ semantic search
+  - **เคสที่ Cursor ชนะชัด:** query kind `semantic`/`multi-hop` (q5,6,9,10) — MCP ได้ 0.33/0.00/0.50/0.00 (recall ต่ำมาก) แต่ Cursor ตอบถูกแม้แบบ spontaneous (0.67/0.25/1.00/1.00) โดยเฉพาะ q10 (incident/scaling) ที่ MCP พลาดทั้ง 3 ไฟล์แต่ Cursor เจอครบตั้งแต่ตอบครั้งแรก — น่าจะมาจาก multi-step search ("Explored X files, N searches") ที่ MCP ของเราไม่มี (เราค้นครั้งเดียว ไม่มี query reformulation)
+  - **รายงานตรงๆ ตามกติกา plan:** Cursor ชนะ MCP ในสัดส่วน query ที่มากกว่า (โดยเฉพาะ semantic/multi-hop) — MCP ชนะเฉพาะ exact/keyword ที่พึ่ง literal match
+  - **Setup ที่ทำซ้ำได้:** Cursor (build ที่ผู้ใช้ใช้ ณ 2026-08-23), โหมด **Ask** (ไม่ใช่ Agent — ดู pitfall ด้านล่าง), เปิดโฟลเดอร์ vault ที่ **copy ออกมาแยกไม่มี .git ครอบ** (ดูเหตุผลด้านล่าง), index ของ vault ขนาดนี้ (55 ไฟล์) เร็วมาก ไม่ต้องรอนาน
+  - **⚠️ Pitfall ที่เจอระหว่างทาง (สำคัญ เก็บไว้เตือนคนทำซ้ำ):**
+    1. **Agent mode ไม่ใช่ black-box indexing** — Cursor Agent mode มี terminal access เต็ม ไม่ sandbox ตาม workspace ที่เปิด สามารถ `cd` ออกไปรันโค้ดของ repo อื่นได้ (เจอจริง: มันสั่ง `npx tsx` เรียก fts5 backend ของเราเองมาตอบ) ทำให้ผลที่วัดได้ไม่ใช่ Cursor indexing เลย ต้องใช้ **Ask mode** เท่านั้นถึงจะวัดกลไกในตัว Cursor ได้จริง
+    2. **เปิดแค่ subfolder ของ git repo ไม่ได้แปลว่า index ถูกตัดขอบตามนั้น** — เปิด `vault/` เป็น workspace ทั้งที่มันอยู่ใต้ repo `agent-memory-poc` ที่มี `bench/queries.json` (ground truth ตรงๆ) อยู่ด้วย ผลคือ Cursor (แม้ Ask mode, แท็บใหม่ไม่มีประวัติ) ยังหา `bench/queries.json` เจอและอ้างคำตอบเฉลยตรงๆ ได้ — ต้อง **copy vault/ ไปไว้นอก git repo ที่ไม่มีไฟล์โปรเจกต์อื่นอยู่ใกล้เลย** ถึงจะวัดสะอาดจริง
 - [ ] **W10-5** Packaging + จัดการ index stale (ใช้จริงอย่างน้อย 1 วันทำงาน)
 - [ ] **W10-6** README
 

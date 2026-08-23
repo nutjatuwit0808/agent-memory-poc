@@ -13,16 +13,14 @@
 | 4 | [04-router.md](04-router.md) | hybrid routing + fusion | 3 |
 | 5 | [05-frontend.md](05-frontend.md) | UI เปรียบเทียบ backend แบบพิมพ์ query เอง | 4 |
 
-## ส่วนขยาย — retrieval แบบอื่นที่ยังไม่ได้ทำ (ยังไม่เริ่ม)
+## ส่วนขยาย — retrieval แบบอื่น
 
-สี่แผนนี้มาจากการสำรวจว่าปัจจุบันมี retrieval แบบไหนอีกบ้างนอกจาก 4 แบบที่ทำไปแล้ว **เรียงตามความคุ้ม/ความเสี่ยง ไม่ใช่ตามลำดับที่ค้นเจอ**
-
-| Phase | ไฟล์ | โฟกัส | dependency ใหม่ | ความเสี่ยงหลัก |
+| Phase | ไฟล์ | โฟกัส | dependency ใหม่ | สถานะ |
 |---|---|---|---|---|
-| 6 | [06-graph-traversal.md](06-graph-traversal.md) | เดินตาม wikilink ที่ `core/` parse ไว้แล้วแต่ไม่มีใครใช้ | **ไม่มีเลย** | ต้องเพิ่ม multi-hop query ก่อน ไม่งั้นวัดไม่เห็นอะไร |
-| 7 | [07-reranking.md](07-reranking.md) | cross-encoder จัดอันดับใหม่ (2-stage) | โมเดล (ใช้ dep เดิมได้) | precision@5 อยู่ที่ 89% ของเพดานแล้ว อาจไม่มีที่ให้ปรับปรุง |
-| 8 | [08-learned-sparse.md](08-learned-sparse.md) | SPLADE — sparse ที่เรียนรู้ term expansion | โมเดล | multilingual หายาก · อาจแพ้ BM25 ถ้าไม่ train เอง |
-| 9 | [09-late-interaction.md](09-late-interaction.md) | ColBERT — เก็บเวกเตอร์ทุก token + MaxSim | โมเดล (ColBERT checkpoint) | index ใหญ่ขึ้น ~80 เท่า |
+| 6 | [06-graph-traversal.md](06-graph-traversal.md) | เดินตาม wikilink ที่ `core/` parse ไว้แล้วแต่ไม่มีใครใช้ | **ไม่มีเลย** | ✅ เสร็จแล้ว |
+| 7 | [07-reranking.md](07-reranking.md) | cross-encoder จัดอันดับใหม่ (2-stage) | โมเดล (ใช้ dep เดิมได้) | ✅ เสร็จแล้ว |
+
+**Phase 8 (SPLADE) และ Phase 9 (ColBERT/late interaction) ถูกถอดออกจากแผนแล้ว (2026-08-23)** — ทั้งสองต้องพึ่ง ML model เพิ่มเพื่อตัดสินใจว่าทำต่อได้ไหม (Phase 8 หา multilingual SPLADE ที่มี ONNX ใช้จริงไม่เจอ, Phase 9 หาเจอแต่ไฟล์ใหญ่ 2.1GB และมีความเสี่ยงเรื่อง ONNX output ไม่ตรง) ตัดสินใจไม่ผูกความคืบหน้าของโปรเจกต์ไว้กับการหาโมเดลเพิ่มอีก — ถ้าจะกลับมาทำในอนาคต ต้องเปิดแผนใหม่
 
 ## ส่วนขยาย — เอาไปใช้จริงนอกโปรเจกต์ (ยังไม่เริ่ม)
 
@@ -30,19 +28,14 @@
 |---|---|---|---|---|
 | 10 | [10-mcp-server.md](10-mcp-server.md) | ใช้ vault เป็น memory ใน Cursor ผ่าน MCP + วัดว่า overhead กลบความเร็วไหม | ไม่มี (เขียน JSON-RPC เอง) | Cursor indexing เป็นกล่องดำ — เทียบ latency ตรงๆ ไม่ได้ |
 
-**ทำ Phase 10 แยกจาก 6–9 ได้เลย** ไม่ต้องรอ — มันใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04 ไม่ได้พึ่ง retrieval แบบใหม่
-
-**ทำไมเรียงแบบนี้:** Phase 6 ไม่ต้องเพิ่ม dependency สักตัวและใช้ของที่มีอยู่แล้ว (`note.links`) จึงคุ้มที่สุด · Phase 6 ยังเพิ่ม multi-hop query เข้า `bench/queries.json` ซึ่ง phase หลังใช้ต่อได้ · Phase 9 หนักสุดและเสี่ยงตกหลุมเดิมกับ WS03 (PQ ทำ recall พัง) จึงไว้ท้ายสุด
+**ทำ Phase 10 แยกจาก 6–7 ได้เลย** ไม่ต้องรอ — มันใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04 ไม่ได้พึ่ง retrieval แบบใหม่
 
 ## นโยบาย dependency สำหรับ Workshop 06–10 (ตัดสิน 2026-08-23)
 
 | กรณี | ต้องขออนุมัติไหม |
 |---|---|
-| โมเดลใหม่ที่รันผ่าน `@huggingface/transformers` ที่มีอยู่แล้ว (cross-encoder, SPLADE, ColBERT) | ❌ **อนุมัติล่วงหน้าแล้ว** — โหลดได้เลย แค่จดชื่อ + ขนาดลง README |
 | `@modelcontextprotocol/sdk` (fallback ของ D-14) | ❌ **อนุมัติล่วงหน้าแล้ว** — ใช้ได้ถ้า W10-1 เขียนเองแล้วต่อไม่ติด |
-| npm package อื่นนอกจากสองข้อบน | ✅ ต้องถามก่อนเสมอ (CLAUDE.md §7) |
-
-เหตุผล: spike ของ 07/08/09 คือการ *ลองว่าโมเดลใช้กับไทยได้ไหม* ซึ่งต้องโหลดมาลองถึงจะรู้ — ถ้าต้องหยุดถามทุกครั้งจะสะดุดกลางคัน แต่ต้นทุนจริงคือพื้นที่ดิสก์ (~400–500MB/ตัว) ไม่ใช่ dependency ที่ผูกกับโค้ด
+| npm package อื่นนอกจากข้อบน | ✅ ต้องถามก่อนเสมอ (CLAUDE.md §7) |
 
 **สิ่งที่ตั้งใจไม่ทำ** — HyDE, query rewriting, multi-query fusion, agentic retrieval (Self-RAG/FLARE): ทั้งกลุ่มนี้ต้องเรียก LLM ในเส้นทางตัดสินใจ ซึ่ง**ขัด CLAUDE.md §2.1 โดยตรง** · GraphRAG แบบสกัด entity ด้วย LLM ก็ขัด §1 เช่นกัน (Phase 6 จึงใช้ wikilink ที่คนเขียนเองแทน)
 
