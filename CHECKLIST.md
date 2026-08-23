@@ -195,7 +195,10 @@
   - **⚠️ Pitfall ที่เจอระหว่างทาง (สำคัญ เก็บไว้เตือนคนทำซ้ำ):**
     1. **Agent mode ไม่ใช่ black-box indexing** — Cursor Agent mode มี terminal access เต็ม ไม่ sandbox ตาม workspace ที่เปิด สามารถ `cd` ออกไปรันโค้ดของ repo อื่นได้ (เจอจริง: มันสั่ง `npx tsx` เรียก fts5 backend ของเราเองมาตอบ) ทำให้ผลที่วัดได้ไม่ใช่ Cursor indexing เลย ต้องใช้ **Ask mode** เท่านั้นถึงจะวัดกลไกในตัว Cursor ได้จริง
     2. **เปิดแค่ subfolder ของ git repo ไม่ได้แปลว่า index ถูกตัดขอบตามนั้น** — เปิด `vault/` เป็น workspace ทั้งที่มันอยู่ใต้ repo `agent-memory-poc` ที่มี `bench/queries.json` (ground truth ตรงๆ) อยู่ด้วย ผลคือ Cursor (แม้ Ask mode, แท็บใหม่ไม่มีประวัติ) ยังหา `bench/queries.json` เจอและอ้างคำตอบเฉลยตรงๆ ได้ — ต้อง **copy vault/ ไปไว้นอก git repo ที่ไม่มีไฟล์โปรเจกต์อื่นอยู่ใกล้เลย** ถึงจะวัดสะอาดจริง
-- [ ] **W10-5** Packaging + จัดการ index stale (ใช้จริงอย่างน้อย 1 วันทำงาน)
+- [ ] **W10-5** Packaging + จัดการ index stale (ใช้จริงอย่างน้อย 1 วันทำงาน) — เริ่มสะสม usage แล้ว:
+  - **2026-08-23:** ยืนยัน end-to-end ครั้งแรกว่า agent เรียก MCP tool เองถูกต้องจริงในการใช้งานทั่วไป (ไม่ต้องสั่ง/บังคับ) — ถามคำถามธรรมดา "ลูกค้าขอคืนเงินแล้วระบบค้าง ควรทำยังไง" ใน Agent mode แล้วเห็น "Ran search_memory in memory-workshop" × 2 + "Ran get_memory in memory-workshop" × 3 คำตอบที่ได้ถูกต้องตรงกับ vault (อ้าง Case 2891, refund-timeout-policy, verifyPayment)
+  - **Pitfall ที่เจอ:** หลังแก้ `mcp.ts` เพิ่ม tool (W10-2) Cursor ไม่ re-fetch tool list เองแม้กด reload ใน Settings ครั้งแรก (ยังค้างที่ "1 tool enabled") ต้องเปิด dialog "Configure memory-workshop" แล้วกดปุ่ม **Reload** ตรงนั้นเฉพาะ ถึงจะได้ tool list ใหม่ครบ 3 ตัว — จดไว้เป็นขั้นตอนที่ต้องทำทุกครั้งที่แก้ `mcp.ts` แล้วจะทดสอบใน Cursor ต่อ
+  - ยังไม่ครบ 1 วันทำงานตาม DoD — ต้องใช้งานต่อเนื่องเพิ่ม
 - [ ] **W10-6** README
 
 **Gate:** ตอบได้ด้วยตัวเลขว่าประสิทธิภาพจาก WS01–05 ตามมาถึง Cursor ไหม หรือถูก MCP overhead กลบ
