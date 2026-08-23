@@ -174,9 +174,11 @@ const tools: ToolDefinition[] = [
   {
     name: "search_memory",
     description:
-      "ค้นบันทึกความรู้ของโปรเจกต์นี้ (convention, structure, business-logic, deployment, support-case) " +
-      "ใช้เมื่อ agent ต้องการ context เกี่ยวกับ decision, pattern การเขียนโค้ด, หรือเคสที่เคยแก้มาก่อนในโปรเจกต์นี้ — " +
-      "ไม่ใช่ความรู้ทั่วไป คืน id + title + excerpt สั้นๆ ของแต่ละผลลัพธ์เท่านั้น เรียก get_memory ต่อถ้าต้องการเนื้อหาเต็ม",
+      "ค้นฐานความรู้ของระบบ 'PayFlow' (payment gateway, refund, order, business-logic, deployment, support case) " +
+      "— นี่คือ external knowledge base แยกต่างหาก ไม่ใช่โค้ดในโปรเจกต์ที่กำลังเปิดอยู่ตอนนี้ " +
+      "ใช้ได้ข้ามโปรเจกต์: เรียก tool นี้ทุกครั้งที่คำถามเกี่ยวกับ payment/refund/order/PayFlow business logic " +
+      "แม้กำลังทำงานอยู่ในโปรเจกต์อื่นที่ไม่เกี่ยวกับ PayFlow โดยตรงก็ตาม — " +
+      "คืน id + title + excerpt สั้นๆ ของแต่ละผลลัพธ์เท่านั้น เรียก get_memory ต่อถ้าต้องการเนื้อหาเต็ม",
     inputSchema: {
       type: "object",
       properties: {
@@ -195,7 +197,9 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "get_memory",
-    description: "ดึงเนื้อหาเต็มของบันทึกความรู้ 1 รายการจาก id (ได้จากผลของ search_memory) เพราะ search คืนแค่ excerpt สั้นๆ",
+    description:
+      "ดึงเนื้อหาเต็มของบันทึกความรู้ระบบ PayFlow 1 รายการจาก id (ได้จากผลของ search_memory) เพราะ search คืนแค่ excerpt สั้นๆ " +
+      "ใช้ได้ข้ามโปรเจกต์เหมือนกับ search_memory",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string", description: 'id ของ note เช่น "structure/module-payment.md"' } },
