@@ -28,11 +28,21 @@
 
 | Phase | ไฟล์ | โฟกัส | dependency ใหม่ | ความเสี่ยงหลัก |
 |---|---|---|---|---|
-| 10 | [10-mcp-server.md](10-mcp-server.md) | ใช้ vault เป็น memory ใน Cursor ผ่าน MCP + วัดว่า overhead กลบความเร็วไหม | ยังไม่ตัดสิน (D-14) | Cursor indexing เป็นกล่องดำ — เทียบ latency ตรงๆ ไม่ได้ |
+| 10 | [10-mcp-server.md](10-mcp-server.md) | ใช้ vault เป็น memory ใน Cursor ผ่าน MCP + วัดว่า overhead กลบความเร็วไหม | ไม่มี (เขียน JSON-RPC เอง) | Cursor indexing เป็นกล่องดำ — เทียบ latency ตรงๆ ไม่ได้ |
 
 **ทำ Phase 10 แยกจาก 6–9 ได้เลย** ไม่ต้องรอ — มันใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04 ไม่ได้พึ่ง retrieval แบบใหม่
 
 **ทำไมเรียงแบบนี้:** Phase 6 ไม่ต้องเพิ่ม dependency สักตัวและใช้ของที่มีอยู่แล้ว (`note.links`) จึงคุ้มที่สุด · Phase 6 ยังเพิ่ม multi-hop query เข้า `bench/queries.json` ซึ่ง phase หลังใช้ต่อได้ · Phase 9 หนักสุดและเสี่ยงตกหลุมเดิมกับ WS03 (PQ ทำ recall พัง) จึงไว้ท้ายสุด
+
+## นโยบาย dependency สำหรับ Workshop 06–10 (ตัดสิน 2026-08-23)
+
+| กรณี | ต้องขออนุมัติไหม |
+|---|---|
+| โมเดลใหม่ที่รันผ่าน `@huggingface/transformers` ที่มีอยู่แล้ว (cross-encoder, SPLADE, ColBERT) | ❌ **อนุมัติล่วงหน้าแล้ว** — โหลดได้เลย แค่จดชื่อ + ขนาดลง README |
+| `@modelcontextprotocol/sdk` (fallback ของ D-14) | ❌ **อนุมัติล่วงหน้าแล้ว** — ใช้ได้ถ้า W10-1 เขียนเองแล้วต่อไม่ติด |
+| npm package อื่นนอกจากสองข้อบน | ✅ ต้องถามก่อนเสมอ (CLAUDE.md §7) |
+
+เหตุผล: spike ของ 07/08/09 คือการ *ลองว่าโมเดลใช้กับไทยได้ไหม* ซึ่งต้องโหลดมาลองถึงจะรู้ — ถ้าต้องหยุดถามทุกครั้งจะสะดุดกลางคัน แต่ต้นทุนจริงคือพื้นที่ดิสก์ (~400–500MB/ตัว) ไม่ใช่ dependency ที่ผูกกับโค้ด
 
 **สิ่งที่ตั้งใจไม่ทำ** — HyDE, query rewriting, multi-query fusion, agentic retrieval (Self-RAG/FLARE): ทั้งกลุ่มนี้ต้องเรียก LLM ในเส้นทางตัดสินใจ ซึ่ง**ขัด CLAUDE.md §2.1 โดยตรง** · GraphRAG แบบสกัด entity ด้วย LLM ก็ขัด §1 เช่นกัน (Phase 6 จึงใช้ wikilink ที่คนเขียนเองแทน)
 

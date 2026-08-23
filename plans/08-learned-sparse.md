@@ -35,7 +35,7 @@ BM25 (WS02) ให้น้ำหนักคำจาก **สถิติล�
 - [ ] จดชื่อโมเดล ขนาด และผลทดสอบ term expansion ภาษาไทยลง README
 - [ ] จำนวน non-zero term ต่อเอกสาร (min/median/max)
 - [ ] **ถ้าหาโมเดล multilingual ไม่ได้ → หยุดแล้วยกขึ้นมาคุย** อย่าฝืนใช้ตัว English-only แล้วสรุปว่า "SPLADE ไม่ดี"
-- [ ] ถ้าต้องเพิ่ม dependency ใหม่ → ถามก่อน (CLAUDE.md §7)
+- [ ] โมเดลที่รันผ่าน `@huggingface/transformers` เดิม → **อนุมัติล่วงหน้าแล้ว** โหลดได้เลย · npm package ตัวใหม่ → ต้องถามก่อน (ดู [นโยบาย dependency](README.md))
 
 ---
 

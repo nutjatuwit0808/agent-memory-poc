@@ -20,7 +20,7 @@ const MEASURED_ROUNDS = 20;
 const TOP_K = 5;
 const SEARCH_LIMIT = 10;
 
-const queryKindSchema = z.enum(["exact", "keyword", "semantic", "filtered"]);
+const queryKindSchema = z.enum(["exact", "keyword", "semantic", "filtered", "multi-hop"]);
 
 const querySchema = z.object({
   id: z.string(),

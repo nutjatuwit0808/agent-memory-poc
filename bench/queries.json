@@ -181,5 +181,59 @@
     "kind": "filtered",
     "layer": "deployment",
     "relevant": ["deployment/scaling-policy.md"]
+  },
+  {
+    "id": "q-multihop-refund-duplicate-error-code",
+    "text": "ขอคืนเงินซ้ำสำหรับ order เดิม ระบบจะแจ้ง error code ตามมาตรฐานไหน",
+    "kind": "multi-hop",
+    "layer": null,
+    "relevant": [
+      "business-logic/refund-policy.md",
+      "convention/error-code-convention.md"
+    ]
+  },
+  {
+    "id": "q-multihop-incident-monitoring-scaling",
+    "text": "ตอนเกิด incident payment gateway ควรเช็ค alert ไหนก่อนตัดสินใจ scale เพิ่ม",
+    "kind": "multi-hop",
+    "layer": null,
+    "relevant": [
+      "deployment/incident-response-runbook.md",
+      "deployment/monitoring-alerts.md",
+      "deployment/scaling-policy.md"
+    ]
+  },
+  {
+    "id": "q-multihop-refund-backlog-timeout-tuning",
+    "text": "เคส refund ค้างพร้อมกันหลายรายการ เกี่ยวโยงกับการตั้งค่า timeout ระดับ infrastructure ตรงไหน",
+    "kind": "multi-hop",
+    "layer": null,
+    "relevant": [
+      "support-cases/case-3401.md",
+      "business-logic/refund-timeout-policy.md",
+      "deployment/connection-timeout-tuning.md"
+    ]
+  },
+  {
+    "id": "q-multihop-dispute-fraud-retry",
+    "text": "ลูกค้าที่เคยถูกระบบ fraud ตรวจสอบแล้วเกิดข้อพิพาทภายหลัง ส่งผลต่อนโยบาย retry การชำระเงินยังไง",
+    "kind": "multi-hop",
+    "layer": null,
+    "relevant": [
+      "business-logic/dispute-resolution-process.md",
+      "business-logic/fraud-detection-rules.md",
+      "business-logic/payment-retry-policy.md"
+    ]
+  },
+  {
+    "id": "q-multihop-order-state-payment-lifecycle",
+    "text": "state machine ของ order เชื่อมกับวงจรชีวิตการชำระเงินตรงจุดไหนบ้าง",
+    "kind": "multi-hop",
+    "layer": null,
+    "relevant": [
+      "structure/module-order.md",
+      "business-logic/long-form-order-state-machine.md",
+      "business-logic/long-form-payment-lifecycle.md"
+    ]
   }
 ]

@@ -24,14 +24,14 @@ MCP (Model Context Protocol) คือ JSON-RPC 2.0 ที่ทำให้ age
 
 **เหตุผล D-12 (read-only):** ให้ agent เขียน note กลับจะขัด CLAUDE.md §1 ที่ตัด "LLM extraction" ทิ้งไปแล้ว และขัด §2.2 ที่ให้ vault เป็น source of truth ที่คนเขียนเอง — ถ้าเปิด write จะเกิดคำถามใหม่ทั้งชุด (ใครกรอก `layer`/`tags`, จะกัน LLM เขียนมั่วยังไง, index stale ทันทีที่เขียน) ซึ่งเป็นคนละ workshop
 
-### D-14 — ยังไม่ตัดสิน: เขียน MCP protocol เอง หรือใช้ SDK ⚠️ ต้องเคลียร์ก่อน W10-2
+### D-14 ✅ ตัดสินแล้ว (2026-08-23): **เขียน JSON-RPC เองก่อน · SDK เป็น fallback**
 
 | ทาง | ผล |
 |---|---|
-| **เขียน JSON-RPC เอง** ⭐ เสนอ | 0 dependency · surface ที่ต้องรองรับเล็กมาก (`initialize`, `tools/list`, `tools/call`) · ตรงกับ CLAUDE.md §1 "เห็นกลไก" และแนวเดียวกับที่เลือก `node:http` แทน framework ใน WS05 · **เสี่ยง:** spec ผิดนิดเดียวแล้ว Cursor ไม่ต่อ debug ยาก |
-| `@modelcontextprotocol/sdk` | ปลอดภัยกว่าเรื่อง spec · แลกกับ dependency ใหม่ที่ต้องขออนุมัติ (§7) และซ่อนกลไกที่ workshop นี้อยากให้เห็น |
+| **เขียน JSON-RPC เอง** ✅ เลือกทางนี้ | 0 dependency · surface ที่ต้องรองรับเล็กมาก (`initialize`, `tools/list`, `tools/call`) · ตรงกับ CLAUDE.md §1 "เห็นกลไก" และแนวเดียวกับที่เลือก `node:http` แทน framework ใน WS05 |
+| `@modelcontextprotocol/sdk` | เก็บไว้เป็น **fallback ที่อนุมัติล่วงหน้าแล้ว** — ถ้า W10-1 ต่อ Cursor ไม่ติด ให้สลับไปใช้ได้ทันทีโดยไม่ต้องถามซ้ำ แล้วบันทึกเหตุผลว่าติดตรงไหน |
 
-**W10-1 ออกแบบมาให้ตัดสินข้อนี้ด้วยผลการทดลอง ไม่ใช่ด้วยความเห็น** — ถ้าเขียนเองแล้ว Cursor ต่อไม่ติดภายใน task แรก ให้สลับไปใช้ SDK ทันที
+**เงื่อนไขสลับทาง:** ถ้า handshake ยังไม่ผ่านเมื่อจบ W10-1 → สลับไป SDK **ห้ามดันต่อ** เพราะ spec ผิดนิดเดียวแล้ว debug ยากจนกินเวลาทั้ง workshop
 
 ---
 

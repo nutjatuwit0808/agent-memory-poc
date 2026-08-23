@@ -6,7 +6,7 @@
 
 **กติกา:** ติ๊ก `[x]` ได้ต่อเมื่อผ่าน DoD ทุกข้อในไฟล์แผน — ห้ามติ๊กเพราะ "เขียนโค้ดเสร็จแล้ว"
 
-ความคืบหน้า: **36 / 62** — Phase 0 + Workshop 01–05 เสร็จครบ ✅ · Workshop 06–09 (retrieval แบบอื่น) และ 10 (MCP server) ยังไม่เริ่ม
+ความคืบหน้า: **55 / 69** — Phase 0 + Workshop 01–07 เสร็จครบ ✅ · Workshop 08 บล็อกรอผู้ใช้ตัดสินใจ · Workshop 09 หยุดกลางทางตามคำสั่งผู้ใช้ (บันทึกผลลบแล้ว, 3 task ข้าม) · Workshop 10 (MCP server) ยังไม่เริ่ม
 
 ---
 
@@ -123,33 +123,57 @@
 ## ส่วนขยาย — retrieval แบบอื่น (ยังไม่เริ่ม) → [แผน](plans/README.md)
 
 > มาจากการสำรวจว่าปัจจุบันมี retrieval แบบไหนอีกนอกจาก 4 แบบที่ทำไปแล้ว
-> **ทั้ง 4 phase ยังไม่อนุมัติให้เริ่ม** — แต่ละตัวมี decision/ความเสี่ยงที่ต้องเคลียร์ใน task แรกก่อน
+> **ยังไม่เริ่มทำ — เก็บแผนไว้ก่อน ค่อยตัดสินใจทีหลังว่าจะเอาตัวไหน** (ตัดสิน 2026-08-23)
+> **นโยบาย dependency:** โมเดลที่รันผ่าน `@huggingface/transformers` เดิม อนุมัติล่วงหน้าแล้ว โหลดได้เลย · npm package ตัวใหม่ต้องถามก่อน → ดู [plans/README.md](plans/README.md)
 
 ### Workshop 06 — Graph traversal → [แผน](plans/06-graph-traversal.md)
 
 > ✅ ไม่ต้องเพิ่ม dependency เลย — ใช้ `note.links` ที่ `core/` parse ไว้ตั้งแต่ P0-3 แต่ไม่มี backend ไหนแตะตลอด WS01–05
 
-- [ ] **W6-1** ขยาย query set ด้วย `multi-hop` ≥5 ข้อ + วัด baseline (ห้ามข้าม)
-- [ ] **W6-2** `link-graph.ts` — adjacency + backlink + สถิติกราฟ
-- [ ] **W6-3** `graph.backend.ts` — seed จาก backend เดิม แล้วขยายตาม link
-- [ ] **W6-4** วัดผล — multi-hop ดีขึ้นแค่ไหน / single-hop แย่ลงแค่ไหน
-- [ ] **W6-5** README
+- [x] **W6-1** ขยาย query set ด้วย `multi-hop` ≥5 ข้อ + วัด baseline (ห้ามข้าม)
+- [x] **W6-2** `link-graph.ts` — adjacency + backlink + สถิติกราฟ
+- [x] **W6-3** `graph.backend.ts` — seed จาก backend เดิม แล้วขยายตาม link
+- [x] **W6-4** วัดผล — multi-hop ดีขึ้นแค่ไหน / single-hop แย่ลงแค่ไหน
+- [x] **W6-5** README
 
-**Gate:** ตอบได้ว่ากราฟที่คนเขียนเอง คุ้มกว่าหรือแย่กว่ากราฟที่ LLM สกัดให้
+**Gate:** ตอบได้ว่ากราฟที่คนเขียนเอง คุ้มกว่าหรือแย่กว่ากราฟที่ LLM สกัดให้ ✅ — deterministic 100% + ตรวจสอบได้ทุกเส้นทาง แลกกับความครอบคลุมที่จำกัดตามวินัยการเขียน wikilink ดู [workshops/06-graph-traversal/README.md](workshops/06-graph-traversal/README.md)
+
+**หมายเหตุสำคัญจาก Workshop 06:**
+- baseline `router-fuse` ได้ multi-hop recall 1.00 อยู่แล้วโดยไม่มี graph เลย — งานของ graph จึงไม่ใช่ "ทำให้ multi-hop หาเจอ" แต่คือทำให้ backend เดี่ยวที่เร็วกว่า fuse มากได้ผลใกล้เคียงกัน
+- D-9 (`score = max(seedScore × decay^hop)`) ขัดกับสเปก W6-3 ("note ที่ถูกชี้จากหลาย seed ต้องได้คะแนนสะสม") เอง — แก้เป็น max ภายในเส้นทางเดียวกัน (seed เดิม) แต่ sum ข้าม seed ต่างกัน (คล้าย RRF ของ WS04)
+- วัดแล้วพบ noise จริงตามที่ D-9 กังวล: `ripgrep+keyword` และ `vector+filtered` recall ร่วง 0.10 ที่ h=1 — ยืนยันว่าการวัดจริง ไม่ใช่แค่ทฤษฎี
+- backend `graph` ถูก register เข้า `backends/index.ts` แล้ว (seed=router-route, hops=1, forward) — `npm run bench` แสดง 6 แถวแล้ว recall@5=0.86
 
 ### Workshop 07 — Cross-encoder reranking → [แผน](plans/07-reranking.md)
 
 > ⚠️ precision@5 ของ `router-fuse` = 0.33 ซึ่งเป็น **89% ของเพดานทฤษฎี (0.37)** อยู่แล้ว — อาจไม่มีที่ให้ rerank ปรับปรุง
 
-- [ ] **W7-1** พิสูจน์ headroom ด้วย oracle ceiling ก่อน (ขยาย query set ถ้าจำเป็น)
-- [ ] **W7-2** Spike — หา cross-encoder ที่รองรับไทย (`ms-marco` เป็น English-only)
-- [ ] **W7-3** `rerank.backend.ts` — 2-stage + แยก `stage1Ms`/`rerankMs`
-- [ ] **W7-4** วัด trade-off ของ topN (5/10/20/50)
-- [ ] **W7-5** README
+- [x] **W7-1** พิสูจน์ headroom ด้วย oracle ceiling ก่อน (ขยาย query set ถ้าจำเป็น)
+- [x] **W7-2** Spike — หา cross-encoder ที่รองรับไทย (`ms-marco` เป็น English-only)
+- [x] **W7-3** `rerank.backend.ts` — 2-stage + แยก `stage1Ms`/`rerankMs`
+- [x] **W7-4** วัด trade-off ของ topN (5/10/20/50)
+- [x] **W7-5** README
 
-**Gate:** ตอบได้ว่า reranking คุ้มไหมที่ vault ขนาดนี้ ("ไม่คุ้ม" เป็นคำตอบที่ยอมรับได้ถ้ามีตัวเลข)
+**Gate:** ตอบได้ว่า reranking คุ้มไหมที่ vault ขนาดนี้ ✅ — "ไม่คุ้ม" ยกเว้นกรณีเดียว: backend เดี่ยวที่มี oracle gap สูง (vector, topN=10) ที่อื่นจ่าย O(N) เต็มๆ แลกผลตอบแทนแทบไม่มี ดู [workshops/07-reranking/README.md](workshops/07-reranking/README.md)
+
+**หมายเหตุสำคัญจาก Workshop 07:**
+- oracle ceiling พิสูจน์แม่นจริง: rerank(vector, topN=10) วัดได้ recall=0.827 ตรงกับตัวเลขที่ทำนายไว้ล่วงหน้าเป๊ะ
+- `router-fuse` มี oracle gap = 0.000 — reranking ช่วยอะไรไม่ได้เลยกับ backend ที่จัดอันดับดีที่สุดอยู่แล้ว
+- เจอ abstraction ไม่ทำงานตามโฆษณาอีกครั้ง (ธีมเดิมจาก WS03): โมเดลติด tag "transformers.js" แต่ `AutoModelForSequenceClassification` โยน error เพราะ config.json ไม่มี `model_type` ต้อง import class ตรง (`XLMRobertaForSequenceClassification`)
+- throughput ที่วัดจากประโยคสั้นไม่สะท้อนต้นทุนจริง — เอกสารเต็มจากวอลต์ (800 ตัวอักษร) ช้ากว่า spike ~5-8 เท่า
+- ไม่พบเคสที่ rerank ทำให้แย่ลงแม้แต่ตัวเดียว (ทดสอบครบ 3 backend × 25 query ที่ topN=5) — รายงานตรงๆ ว่า query set นี้อาจยังไม่มีเคสกำกวมพอ ไม่ได้แปลว่า reranking ไม่มีความเสี่ยงเลย
+- `rerank` **ไม่ได้** register เข้า `backends/index.ts` (topN≥20 ทำให้ `npm run bench` ช้าเกินไป) — เก็บเป็น backend ที่ทดสอบแล้วจริงแต่เรียกแยก เหมือน LanceDB ANN ใน WS03
 
 ### Workshop 08 — Learned sparse (SPLADE) → [แผน](plans/08-learned-sparse.md)
+
+> ⚠️ **บล็อกอยู่ที่ W8-1 (2026-08-23) — รอผู้ใช้ตัดสินใจ ยังไม่เลือกทางไหน**
+> ค้นหาแล้วไม่พบ multilingual SPLADE ที่มี ONNX ให้ transformers.js โหลดได้จริง:
+> `BAAI/bge-m3` รองรับ 100+ ภาษา (รวมไทย) และมี sparse mode จริง แต่ ONNX export ทุกตัวที่หาเจอ
+> (`Xenova/bge-m3`, `aapot/bge-m3-onnx` ฯลฯ) มีแค่ dense path — sparse head อยู่แยกเป็นไฟล์
+> `sparse_linear.pt` (PyTorch pickle) ที่ stack นี้ไม่มีทางโหลดได้โดยไม่เพิ่ม tooling ใหญ่
+> `naver/splade-v3` (ตัวหลักของวงการ) เป็น English-only และไม่มี ONNX เลยด้วยซ้ำ
+> ถามผู้ใช้แล้วว่าจะ (ก) บันทึกเป็นผลลบแล้วข้ามไป WS09 หรือ (ข) ลอง English-only เพื่อโชว์กลไก
+> — ผู้ใช้ยังไม่เลือก ต้องถามใหม่ก่อนเดินหน้าต่อ
 
 - [ ] **W8-1** Spike — หาโมเดล multilingual + ทดสอบ term expansion ภาษาไทย
 - [ ] **W8-2** Schema `sparse_terms` ต่อยอดจาก SQLite เดิมของ WS02
@@ -161,22 +185,27 @@
 
 ### Workshop 09 — Late interaction (ColBERT) → [แผน](plans/09-late-interaction.md)
 
-> ⚠️ ประเมินแล้ว index จะใหญ่ขึ้น **~80 เท่า** (350KB → ~28MB) และต้องระวังไม่ตกหลุมเดิมกับ WS03 (PQ ทำ recall พังเหลือ 0.20)
+> 🛑 **หยุดที่ W9-1 (2026-08-23) — ตัดสินใจไม่ทำต่อ ไม่ใช่ทำไม่ได้**
+> หา checkpoint multilingual+ONNX เจอจริง (`jinaai/jina-colbert-v2`, มี `th` ในรายการภาษา) ต่างจาก WS08
+> แต่ไฟล์ ONNX weights จริง (resolve ผ่าน LFS แล้ว) = **2.1GB** ใหญ่กว่าโมเดลอื่นในโปรเจกต์ ~16 เท่า
+> และมีความเสี่ยงจริงว่า ONNX export จะให้แค่ raw XLM-RoBERTa-large hidden state (1024 dim)
+> ไม่ใช่ ColBERT projection output จริง (128 dim ตาม README) เพราะ `auto_map` ชี้ `AutoModel`
+> ไปที่ `XLMRobertaModel` ธรรมดา ไม่ใช่ custom class `HF_ColBERT` ที่ config ประกาศไว้
+> ผู้ใช้ตัดสินใจ: บันทึกเป็นผลลบ ไม่ดาวน์โหลด ข้ามไป Workshop 10 — รายละเอียดเต็มใน README
 
-- [ ] **W9-1** Spike — หา ColBERT checkpoint multilingual + วัดขนาด index จริง
-- [ ] **W9-2** ขยาย embedding cache ให้เก็บ multi-vector
-- [ ] **W9-3** `colbert.backend.ts` + MaxSim เขียนเอง
-- [ ] **W9-4** วัดผล — โดยเฉพาะ `exact` ที่ dense ได้แค่ 0.47
-- [ ] **W9-5** README
+- [x] **W9-1** Spike — หา ColBERT checkpoint multilingual + วัดขนาด index จริง *(หยุดที่นี่ตามคำสั่งผู้ใช้)*
+- [ ] ~~**W9-2** ขยาย embedding cache ให้เก็บ multi-vector~~ ไม่ทำ (ผลจาก W9-1)
+- [ ] ~~**W9-3** `colbert.backend.ts` + MaxSim เขียนเอง~~ ไม่ทำ
+- [ ] ~~**W9-4** วัดผล — โดยเฉพาะ `exact` ที่ dense ได้แค่ 0.47~~ ไม่ทำ
+- [x] **W9-5** README — เขียนเป็นบันทึกผลการค้นคว้า (negative result) แทนผลวัด
 
-**Gate:** สรุปสเปกตรัมทั้งหมดได้ พร้อมตัวเลขจริงทุกตัว
+**Gate:** ไม่ผ่าน — บันทึกเหตุผลที่หยุดไว้แทน ดู [workshops/09-late-interaction/README.md](workshops/09-late-interaction/README.md)
 
 ---
 
 ## Workshop 10 — MCP server (ใช้ใน Cursor) → [แผน](plans/10-mcp-server.md)
 
-> ✅ **D-11/D-12/D-13 ตัดสินแล้ว (2026-08-23):** วัดผล + ใช้งานจริง · read-only · วัดฝั่งเราละเอียดแล้วเทียบ Cursor เชิงคุณภาพ
-> ⚠️ **D-14 ยังไม่ตัดสิน** — เขียน JSON-RPC เอง (เสนอ) vs `@modelcontextprotocol/sdk` · ให้ตัดสินด้วยผลจาก W10-1
+> ✅ **D-11/D-12/D-13/D-14 ตัดสินครบแล้ว (2026-08-23):** วัดผล + ใช้งานจริง · read-only · วัดฝั่งเราละเอียดแล้วเทียบ Cursor เชิงคุณภาพ · **เขียน JSON-RPC เองก่อน** (SDK เป็น fallback ที่อนุมัติล่วงหน้าแล้ว ถ้า W10-1 ต่อไม่ติด)
 > **ทำแยกจาก Workshop 06–09 ได้เลย** ใช้ backend ที่มีอยู่แล้วตั้งแต่ WS04
 
 - [ ] **W10-1** Spike — ต่อ Cursor ให้ติดด้วย tool เดียว + ตัดสิน D-14 จากผลจริง

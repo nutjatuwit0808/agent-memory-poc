@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "memory-workshop": {
+      "command": "node",
+      "args": ["--import", "tsx", "src/cli/mcp.ts"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

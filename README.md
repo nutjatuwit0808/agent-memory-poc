@@ -107,6 +107,22 @@ workshops/           README ผลการทดลองแต่ละบท 
 
 ทดสอบว่าความต่างที่ `bench` วัดได้ **มองเห็นด้วยตาตอนพิมพ์เองไหม** — พบว่าเห็นชัดจนสลับกันแพ้ชนะได้ในสองคลิก (query identifier: vector recall 0.00 ส่วน ripgrep/fts5 1.00 · query semantic: กลับด้านสมบูรณ์) และพบบทเรียนที่ตาราง bench ไม่เคยบอก: **overhead คงที่ 15ms ของ HTTP กลบความเร็ว 87 เท่าของ fts5 ให้เหลือแค่ 3.2 เท่า** ถ้าวัดเวลาผิดที่ → [รายละเอียด](workshops/05-frontend/README.md)
 
+### Workshop 06 — Graph traversal (wikilink ที่มีอยู่แล้ว)
+
+ทดสอบว่า link graph ที่ `core/` parse เก็บไว้ตั้งแต่ Phase 0 แต่ไม่มี backend ไหนแตะเลยตลอด WS01–05 มีค่าจริงไหม — เพิ่ม query kind ใหม่ `multi-hop` (5 ข้อ) แล้วพบว่า graph expansion (seed จาก router-route ขยาย 1 hop) ดัน recall รวมจาก 0.82 เป็น **0.86** ที่ latency แทบไม่ต่าง (0.19ms) และช่วย `semantic` ทุก backend อย่างสม่ำเสมอ (+0.13) แต่ก็มี noise จริงที่บาง kind ร่วง (`ripgrep+keyword` −0.10) ยืนยันว่า 2 hop แย่กว่า 1 hop เสมอ → [รายละเอียด](workshops/06-graph-traversal/README.md)
+
+### Workshop 07 — Cross-encoder reranking (2-stage retrieval)
+
+ทดสอบว่า reranking (cross-encoder จัดอันดับใหม่จาก candidate ที่ backend เดิมคัดมา) คุ้มไหมเมื่อ `router-fuse` แทบชนเพดานทฤษฎีอยู่แล้ว — คำนวณ oracle ceiling ก่อนพบว่า `fuse` มี gap = 0.000 (rerank ช่วยไม่ได้เลย) แต่ `vector` มี gap 0.073 โดยเฉพาะ query แบบ `exact` (identifier) ที่ gap สูงถึง 0.23 ลองจริงพบว่า `rerank(vector, topN=10)` ได้ recall 0.827 **ตรงกับ oracle ที่คำนวณไว้เป๊ะ** แต่แพงกว่า `router-fuse` มาก (topN=50 ชนะ recall ได้จริงแต่ช้ากว่า 114 เท่า) → [รายละเอียด](workshops/07-reranking/README.md)
+
+### Workshop 08 — Learned sparse (SPLADE) — 🛑 บล็อก
+
+หา multilingual SPLADE ที่มี ONNX ให้ transformers.js โหลดได้จริงไม่เจอเลย — `BAAI/bge-m3` รองรับไทยและมี sparse mode จริง แต่ ONNX export ทุกตัวที่หามีแค่ dense path ส่วน sparse head อยู่แยกเป็นไฟล์ PyTorch pickle ที่ stack นี้โหลดไม่ได้ รอผู้ใช้ตัดสินใจทิศทางต่อไป
+
+### Workshop 09 — Late interaction (ColBERT) — 🛑 หยุดกลางทาง (negative result)
+
+ต่างจาก WS08 — หา checkpoint ได้จริง (`jinaai/jina-colbert-v2`, ยืนยันรองรับไทย) แต่ไฟล์ ONNX จริงใหญ่ถึง **2.1GB** (16 เท่าของโมเดลอื่นในโปรเจกต์) และมีความเสี่ยงว่า ONNX export จะให้แค่ raw encoder output ไม่ใช่ ColBERT projection จริง (custom architecture ไม่ผ่าน auto_map มาตรฐาน) — ตัดสินใจบันทึกเป็นผลการค้นคว้าแล้วไม่ดาวน์โหลด → [รายละเอียด](workshops/09-late-interaction/README.md)
+
 ---
 
 ## 6. เปรียบเทียบ — ข้อดี ข้อเสีย และเหมาะกับกรณีไหน
@@ -121,8 +137,11 @@ workshops/           README ผลการทดลองแต่ละบท 
 | ripgrep | ~29–33 | ~33–52 | 0.74 | 0.27 | 0.74 | 0 | 0 |
 | fts5 | **~0.06** | **~0.16** | 0.72 | 0.25 | 0.75 | ~3 | 671,744 B |
 | vector | ~0.14 | ~0.30 | 0.78 | 0.26 | 0.79 | ~15–20 | 350,208 B |
-| **router (route)** | ~0.19 | ~30 | **0.87** | 0.30 | 0.84 | ~16 | 1,021,952 B |
-| **router (fuse)** | ~29 | ~33 | **0.92** | **0.33** | **0.93** | ~15 | 1,021,952 B |
+| **router (route)** | ~0.19 | ~30 | **0.82–0.87** | 0.30–0.31 | 0.84 | ~16 | 1,021,952 B |
+| **router (fuse)** | ~29 | ~33 | **0.92–0.93** | **0.33–0.38** | **0.92–0.93** | ~15 | 1,021,952 B |
+| **graph** (WS06) | ~0.19 | ~30 | **0.86** | 0.34 | 0.81 | ~13 | 806,672 B |
+
+*ช่วงตัวเลขของ router เกิดจาก query set ที่โตขึ้นหลัง WS06 (20→25 ข้อ เพิ่ม kind `multi-hop`) — ตัวเลขต่ำกว่าคือก่อนเพิ่ม, สูงกว่าคือหลังเพิ่ม*
 
 ### 6.2 recall@5 แยกตามประเภท query — ตารางที่บอกความต่างจริง
 

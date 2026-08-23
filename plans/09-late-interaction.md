@@ -48,7 +48,7 @@ ColBERT จริงๆ แก้ด้วยการลดมิติ (768 �
 - [ ] จดชื่อ checkpoint + มิติต่อ token + ขนาดไฟล์โมเดล
 - [ ] **ขนาด index ที่คำนวณจากของจริง** เทียบกับ dense (350,208 B) และ fts5 (671,744 B)
 - [ ] **ถ้าหา checkpoint multilingual ไม่ได้ → หยุดแล้วยกขึ้นมาคุย** (เอา BERT ธรรมดามาทำ MaxSim จะได้ผลที่ตีความไม่ได้ แล้วสรุปผิดว่า late interaction ไม่ดี)
-- [ ] ถ้าต้องเพิ่ม dependency → ถามก่อน (CLAUDE.md §7)
+- [ ] checkpoint ที่รันผ่าน `@huggingface/transformers` เดิม → **อนุมัติล่วงหน้าแล้ว** โหลดได้เลย · npm package ตัวใหม่ → ต้องถามก่อน (ดู [นโยบาย dependency](README.md))
 
 ---
 
