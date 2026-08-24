@@ -12,6 +12,7 @@
     "bench:mcp": "tsx src/cli/bench-mcp.ts",
     "quality-sample": "tsx src/cli/quality-sample.ts",
     "reindex": "tsx src/cli/reindex.ts",
+    "generate-synthetic-vault": "tsx src/cli/generate-synthetic-vault.ts",
     "serve": "tsx src/cli/serve.ts",
     "mcp": "tsx src/cli/mcp.ts",
     "typecheck": "tsc --noEmit",
