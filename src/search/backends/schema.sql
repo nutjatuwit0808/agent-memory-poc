@@ -8,11 +8,14 @@
 CREATE TABLE IF NOT EXISTS notes (
   id TEXT PRIMARY KEY,
   layer TEXT NOT NULL,
+  domain TEXT NOT NULL,       -- namespace ของ note (ดู plans/12-domain-facet.md) — "core" สำหรับ PayFlow เดิม
   created_at TEXT NOT NULL,   -- ISO 8601
   content TEXT NOT NULL,
   content_hash TEXT NOT NULL, -- sha256(content) — ใช้เช็คว่า note เปลี่ยนไหมตอน incremental reindex
   mtime INTEGER NOT NULL      -- unix ms ของไฟล์ตอนอ่านล่าสุด — ใช้เช็ค stale index ตอน search
 );
+
+CREATE INDEX IF NOT EXISTS idx_notes_domain ON notes(domain);
 
 -- note_tags: normalize tag ออกมาเป็นตารางแยก เพื่อให้ filter ด้วย SQL (WHERE tag = ?) ได้ตรงๆ
 -- แทนที่จะเก็บเป็น JSON array ในคอลัมน์เดียวแล้วต้อง parse ทีหลัง

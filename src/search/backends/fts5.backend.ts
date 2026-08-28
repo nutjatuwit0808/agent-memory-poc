@@ -23,9 +23,10 @@ interface RowResult {
   bm25_rank: number;
 }
 
-function buildSearchSql(hasLayer: boolean, tagCount: number): string {
+function buildSearchSql(hasLayer: boolean, hasDomain: boolean, tagCount: number): string {
   const conditions = ["notes_fts MATCH @matchExpr"];
   if (hasLayer) conditions.push("n.layer = @layer");
+  if (hasDomain) conditions.push("n.domain = @domain");
 
   let tagJoin = "";
   if (tagCount > 0) {
@@ -80,7 +81,7 @@ export class Fts5Backend implements SearchBackend {
     if (matchExpr.length === 0) return [];
 
     const tags = query.tags ?? [];
-    const sql = buildSearchSql(query.layer !== undefined, tags.length);
+    const sql = buildSearchSql(query.layer !== undefined, query.domain !== undefined, tags.length);
     const stmt = this.db.prepare(sql);
 
     const params: Record<string, string | number> = {
@@ -88,6 +89,7 @@ export class Fts5Backend implements SearchBackend {
       limit: query.limit ?? -1, // SQLite: LIMIT -1 = ไม่จำกัด
     };
     if (query.layer !== undefined) params.layer = query.layer;
+    if (query.domain !== undefined) params.domain = query.domain;
     tags.forEach((tag, i) => {
       params[`tag${i}`] = tag;
     });

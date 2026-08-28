@@ -114,6 +114,7 @@ interface ResultPayload {
   id: string;
   title: string;
   layer: Layer;
+  domain: string;
   tags: string[];
   score: number;
   matchedBy: SearchResult["matchedBy"];
@@ -125,6 +126,7 @@ function toPayload(result: SearchResult): ResultPayload {
     id: result.note.id,
     title: extractTitle(result.note.content),
     layer: result.note.layer,
+    domain: result.note.domain,
     tags: result.note.tags,
     score: result.score,
     matchedBy: result.matchedBy,
@@ -162,6 +164,11 @@ function buildSearchQuery(params: URLSearchParams): SearchQuery {
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
+  }
+
+  const domain = params.get("domain");
+  if (domain !== null && domain.length > 0) {
+    query.domain = domain;
   }
 
   return query;
@@ -343,7 +350,7 @@ async function main(): Promise<void> {
 
   server.listen(PORT, () => {
     console.log(`\nพร้อมใช้งาน: http://localhost:${PORT}`);
-    console.log(`  GET /api/search?backend=<name>&q=<query>[&layer=&tags=&limit=&repeat=]`);
+    console.log(`  GET /api/search?backend=<name>&q=<query>[&layer=&domain=&tags=&limit=&repeat=]`);
     console.log(`  GET /api/backends   GET /api/queries`);
     console.log(`  backend ที่ลงทะเบียน: ${[...backendsByName.keys()].join(", ")}`);
   });

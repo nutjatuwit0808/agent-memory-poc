@@ -24,6 +24,27 @@ function toPosixPath(p: string): string {
   return p.split("\\").join("/");
 }
 
+const SYNTHETIC_PREFIX = "synthetic-";
+
+/**
+ * derive domain จาก relPath — pure function แยกออกมาให้ unit test ได้โดยไม่ต้องอ่าน disk
+ * "business-logic/synthetic-ad-bidding/x.md" → "ad-bidding"
+ * "business-logic/x.md" (ไม่มี subfolder) → "core"
+ * ดู plans/12-domain-facet.md สำหรับ rule เต็ม
+ */
+export function deriveDomain(relPath: string): string {
+  const segments = relPath.split("/");
+  if (segments.length <= 2) return "core"; // <layer>/<file>.md ไม่มี subfolder
+  const subfolder = segments[1]!;
+  if (!subfolder.startsWith(SYNTHETIC_PREFIX)) {
+    throw new VaultReadError(
+      relPath,
+      `subfolder "${subfolder}" ไม่ขึ้นต้นด้วย "${SYNTHETIC_PREFIX}" — ไม่รู้จะ derive domain ยังไง`
+    );
+  }
+  return subfolder.slice(SYNTHETIC_PREFIX.length);
+}
+
 async function walkMarkdownFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
@@ -68,6 +89,7 @@ export async function readVault(vaultRoot: string): Promise<MemoryNote[]> {
       tags: parsed.tags,
       createdAt: parsed.createdAt,
       links: parsed.links,
+      domain: deriveDomain(relPath),
     });
   }
 

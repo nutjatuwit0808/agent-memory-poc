@@ -44,7 +44,7 @@ test("classify คืนผลเดิมเสมอสำหรับ query �
 });
 
 function makeNote(id: string): MemoryNote {
-  return { id, content: "", layer: "business-logic", tags: ["x"], createdAt: "2026-01-01T00:00:00.000Z", links: [] };
+  return { id, content: "", layer: "business-logic", tags: ["x"], createdAt: "2026-01-01T00:00:00.000Z", links: [], domain: "core" };
 }
 
 function makeResult(id: string, score: number, matchedBy: SearchResult["matchedBy"]): SearchResult {

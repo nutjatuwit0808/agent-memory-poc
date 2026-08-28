@@ -59,9 +59,10 @@ function validateGroundTruth(queries: BenchQuery[], notes: MemoryNote[]): void {
   }
 }
 
-function toSearchQuery(q: BenchQuery): SearchQuery {
+function toSearchQuery(q: BenchQuery, domainFilter: string | undefined): SearchQuery {
   const base: SearchQuery = { text: q.text, limit: SEARCH_LIMIT };
-  return q.layer === null ? base : { ...base, layer: q.layer };
+  const withLayer = q.layer === null ? base : { ...base, layer: q.layer };
+  return domainFilter === undefined ? withLayer : { ...withLayer, domain: domainFilter };
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -113,7 +114,12 @@ interface BenchRow {
   buildTimeMs: number;
 }
 
-async function benchBackend(backend: SearchBackend, notes: MemoryNote[], queries: BenchQuery[]): Promise<BenchRow> {
+async function benchBackend(
+  backend: SearchBackend,
+  notes: MemoryNote[],
+  queries: BenchQuery[],
+  domainFilter: string | undefined
+): Promise<BenchRow> {
   await backend.index(notes);
   const stats = await backend.stats();
 
@@ -123,14 +129,14 @@ async function benchBackend(backend: SearchBackend, notes: MemoryNote[], queries
 
   for (let round = 0; round < WARMUP_ROUNDS; round++) {
     for (const q of queries) {
-      await backend.search(toSearchQuery(q));
+      await backend.search(toSearchQuery(q, domainFilter));
     }
   }
 
   for (let round = 0; round < MEASURED_ROUNDS; round++) {
     for (const q of queries) {
       const start = performance.now();
-      const results = await backend.search(toSearchQuery(q));
+      const results = await backend.search(toSearchQuery(q, domainFilter));
       const elapsed = performance.now() - start;
       latenciesMs.push(elapsed);
 
@@ -177,8 +183,14 @@ function parseBackendFlag(argv: string[]): string | undefined {
   return flag ? flag.slice("--backend=".length) : undefined;
 }
 
+function parseDomainFilterFlag(argv: string[]): string | undefined {
+  const flag = argv.find((a) => a.startsWith("--domain-filter="));
+  return flag ? flag.slice("--domain-filter=".length) : undefined;
+}
+
 async function main(): Promise<void> {
   const backendFilter = parseBackendFlag(process.argv.slice(2));
+  const domainFilter = parseDomainFilterFlag(process.argv.slice(2));
 
   const notes = await readVault(VAULT_DIR);
   const stats = vaultStats(notes);
@@ -201,7 +213,7 @@ async function main(): Promise<void> {
 
   const rows: BenchRow[] = [];
   for (const backend of selectedBackends) {
-    rows.push(await benchBackend(backend, notes, queries));
+    rows.push(await benchBackend(backend, notes, queries, domainFilter));
   }
 
   console.log(formatMarkdownTable(rows));

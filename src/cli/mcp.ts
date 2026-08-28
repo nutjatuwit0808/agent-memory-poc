@@ -114,6 +114,10 @@ async function searchMemory(args: Record<string, unknown>): Promise<string> {
     if (tags.length > 0) query.tags = tags;
   }
 
+  if (typeof args.domain === "string" && args.domain.length > 0) {
+    query.domain = args.domain;
+  }
+
   const results = await backend.search(query);
   if (results.length === 0) {
     return `ไม่พบผลลัพธ์สำหรับ "${queryText}" ผ่าน backend "${backend.name}"`;
@@ -121,7 +125,7 @@ async function searchMemory(args: Record<string, unknown>): Promise<string> {
 
   const lines = results.map((r, i) => {
     const title = extractTitle(r.note.content);
-    return `${i + 1}. [${r.note.id}] ${title} (layer=${r.note.layer}, score=${r.score.toFixed(3)}, matchedBy=${r.matchedBy})\n   ${buildExcerpt(r.note.content)}`;
+    return `${i + 1}. [${r.note.id}] ${title} (layer=${r.note.layer}, domain=${r.note.domain}, score=${r.score.toFixed(3)}, matchedBy=${r.matchedBy})\n   ${buildExcerpt(r.note.content)}`;
   });
 
   return `พบ ${results.length} ผลลัพธ์ผ่าน backend "${backend.name}":\n\n${lines.join("\n\n")}\n\nเรียก get_memory ด้วย id เพื่อดูเนื้อหาเต็ม`;
@@ -141,6 +145,7 @@ async function getMemory(args: Record<string, unknown>): Promise<string> {
   return [
     `# ${note.id}`,
     `layer: ${note.layer}`,
+    `domain: ${note.domain}`,
     `tags: ${note.tags.join(", ")}`,
     `created: ${note.createdAt}`,
     `links: ${note.links.join(", ") || "(ไม่มี)"}`,
@@ -178,12 +183,15 @@ const tools: ToolDefinition[] = [
       "— นี่คือ external knowledge base แยกต่างหาก ไม่ใช่โค้ดในโปรเจกต์ที่กำลังเปิดอยู่ตอนนี้ " +
       "ใช้ได้ข้ามโปรเจกต์: เรียก tool นี้ทุกครั้งที่คำถามเกี่ยวกับ payment/refund/order/PayFlow business logic " +
       "แม้กำลังทำงานอยู่ในโปรเจกต์อื่นที่ไม่เกี่ยวกับ PayFlow โดยตรงก็ตาม — " +
-      "คืน id + title + excerpt สั้นๆ ของแต่ละผลลัพธ์เท่านั้น เรียก get_memory ต่อถ้าต้องการเนื้อหาเต็ม",
+      "คืน id + title + excerpt สั้นๆ ของแต่ละผลลัพธ์เท่านั้น เรียก get_memory ต่อถ้าต้องการเนื้อหาเต็ม " +
+      "ฐานความรู้นี้มีหลาย namespace (domain) ปนกันอยู่ — PayFlow อยู่ใน domain \"core\" ถ้ารู้แน่ชัดว่าคำถามเกี่ยวกับ PayFlow เท่านั้น " +
+      "ควรระบุ domain=\"core\" เพื่อผลลัพธ์แม่นยำขึ้น",
     inputSchema: {
       type: "object",
       properties: {
         query: { type: "string", description: "คำค้น เป็นภาษาไทยหรืออังกฤษก็ได้" },
         layer: { type: "string", description: `กรองตาม layer (${LAYERS.join(" | ")}) — เว้นว่างถ้าไม่กรอง` },
+        domain: { type: "string", description: 'กรองตาม namespace — PayFlow คือ "core" เว้นว่างถ้าไม่กรอง (จะเห็นทุก domain ปนกัน)' },
         tags: { type: "array", items: { type: "string" }, description: "กรองตาม tag ทุกตัวต้องตรง (AND) — เว้นว่างถ้าไม่กรอง" },
         limit: { type: "number", description: "จำนวนผลลัพธ์สูงสุด (default 10)" },
         backend: {

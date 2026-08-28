@@ -12,6 +12,7 @@ export interface ResultPayload {
   id: string;
   title: string;
   layer: string;
+  domain: string;
   tags: string[];
   score: number;
   matchedBy: "keyword" | "fts" | "vector";
@@ -46,6 +47,7 @@ export interface BenchQuery {
 export interface SearchParams {
   q: string;
   layer?: string;
+  domain?: string;
   tags?: string;
   queryId?: string;
   limit?: number;
@@ -68,6 +70,7 @@ export async function search(
   url.searchParams.set("backend", backend);
   url.searchParams.set("q", params.q);
   if (params.layer) url.searchParams.set("layer", params.layer);
+  if (params.domain) url.searchParams.set("domain", params.domain);
   if (params.tags) url.searchParams.set("tags", params.tags);
   if (params.queryId) url.searchParams.set("queryId", params.queryId);
   url.searchParams.set("limit", String(params.limit ?? 10));

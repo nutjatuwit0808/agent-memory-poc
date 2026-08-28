@@ -50,10 +50,10 @@ export function reindex(notes: MemoryNote[], full: boolean): ReindexStats {
   );
 
   const insertNote = db.prepare(
-    "INSERT INTO notes (id, layer, created_at, content, content_hash, mtime) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO notes (id, layer, domain, created_at, content, content_hash, mtime) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   const updateNote = db.prepare(
-    "UPDATE notes SET layer = ?, created_at = ?, content = ?, content_hash = ?, mtime = ? WHERE id = ?"
+    "UPDATE notes SET layer = ?, domain = ?, created_at = ?, content = ?, content_hash = ?, mtime = ? WHERE id = ?"
   );
   const deleteNote = db.prepare("DELETE FROM notes WHERE id = ?");
   const deleteTags = db.prepare("DELETE FROM note_tags WHERE note_id = ?");
@@ -78,11 +78,11 @@ export function reindex(notes: MemoryNote[], full: boolean): ReindexStats {
       const existingHash = existing.get(note.id);
 
       if (existingHash === undefined) {
-        insertNote.run(note.id, note.layer, note.createdAt, note.content, hash, mtime);
+        insertNote.run(note.id, note.layer, note.domain, note.createdAt, note.content, hash, mtime);
         applyTags(note);
         inserted++;
       } else if (existingHash !== hash) {
-        updateNote.run(note.layer, note.createdAt, note.content, hash, mtime, note.id);
+        updateNote.run(note.layer, note.domain, note.createdAt, note.content, hash, mtime, note.id);
         applyTags(note);
         updated++;
       } else {

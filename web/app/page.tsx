@@ -22,6 +22,7 @@ function emptyColumns(): Record<BackendName, ColumnState> {
 export default function Page() {
   const [text, setText] = useState("");
   const [layer, setLayer] = useState("");
+  const [domain, setDomain] = useState("");
   const [tags, setTags] = useState("");
   const [activeQueryId, setActiveQueryId] = useState<string | undefined>(undefined);
 
@@ -42,7 +43,13 @@ export default function Page() {
   }, []);
 
   const runSearch = useCallback(
-    (q: string, currentLayer: string, currentTags: string, queryId: string | undefined) => {
+    (
+      q: string,
+      currentLayer: string,
+      currentDomain: string,
+      currentTags: string,
+      queryId: string | undefined
+    ) => {
       // ยกเลิก request ชุดก่อนหน้าเสมอ — ripgrep spawn subprocess ทุกครั้ง
       // ถ้าปล่อยให้พิมพ์เร็วๆ แล้ว request กองกันจะกิน CPU ฟรีและผลเก่าอาจมาทับผลใหม่
       abortRef.current?.abort();
@@ -61,6 +68,7 @@ export default function Page() {
         const params = {
           q,
           ...(currentLayer ? { layer: currentLayer } : {}),
+          ...(currentDomain.trim() ? { domain: currentDomain.trim() } : {}),
           ...(currentTags.trim() ? { tags: currentTags.trim() } : {}),
           ...(queryId ? { queryId } : {}),
         };
@@ -88,9 +96,9 @@ export default function Page() {
       setColumns(emptyColumns());
       return;
     }
-    const timer = setTimeout(() => runSearch(trimmed, layer, tags, activeQueryId), DEBOUNCE_MS);
+    const timer = setTimeout(() => runSearch(trimmed, layer, domain, tags, activeQueryId), DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [text, layer, tags, activeQueryId, runSearch]);
+  }, [text, layer, domain, tags, activeQueryId, runSearch]);
 
   /** นับว่า note แต่ละตัวถูกคืนโดยกี่ backend — ใช้ระบายสีผลที่มีเฉพาะบางตัวเท่านั้น
    *  (เป็นการนับเพื่อ "แสดงผล" ล้วนๆ ไม่ได้แตะการจัดอันดับหรือคะแนนของ backend ใดเลย) */
@@ -151,6 +159,16 @@ export default function Page() {
           <input
             className="tags-input"
             type="text"
+            placeholder='domain เช่น "core" = PayFlow เว้นว่าง = ทุก domain'
+            value={domain}
+            onChange={(e) => {
+              setDomain(e.target.value);
+              setActiveQueryId(undefined);
+            }}
+          />
+          <input
+            className="tags-input"
+            type="text"
             placeholder="tags (คั่นด้วย , = AND)"
             value={tags}
             onChange={(e) => {
@@ -172,6 +190,7 @@ export default function Page() {
                   onClick={() => {
                     setText(p.text);
                     setLayer(p.layer ?? "");
+                    setDomain("");
                     setTags("");
                     setActiveQueryId(p.id);
                   }}

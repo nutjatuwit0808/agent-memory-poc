@@ -72,13 +72,14 @@ export class VectorBackend implements SearchBackend {
 
     const searchStart = performance.now();
 
-    // pre-filter: ข้าม chunk ที่ note เจ้าของไม่ผ่าน layer/tags ตั้งแต่ก่อนคำนวณ cosine เลย
-    // ทำได้เพราะ metadata (layer, tags) อยู่ในหน่วยความจำผ่าน notesById อยู่แล้ว
+    // pre-filter: ข้าม chunk ที่ note เจ้าของไม่ผ่าน layer/tags/domain ตั้งแต่ก่อนคำนวณ cosine เลย
+    // ทำได้เพราะ metadata (layer, tags, domain) อยู่ในหน่วยความจำผ่าน notesById อยู่แล้ว
     const requiredTags = query.tags ?? [];
     const candidates = this.chunks.filter((chunk) => {
       const note = this.notesById.get(chunk.noteId);
       if (!note) return false;
       if (query.layer && note.layer !== query.layer) return false;
+      if (query.domain && note.domain !== query.domain) return false;
       if (requiredTags.length > 0 && !requiredTags.every((t) => note.tags.includes(t))) return false;
       return true;
     });

@@ -12,12 +12,17 @@ export interface MemoryNote {
   tags: string[];
   createdAt: string; // ISO 8601
   links: string[]; // wikilink targets
+  // domain: namespace ของ note นี้ — derive จาก subfolder ใต้ layer (vault-reader.ts)
+  // ไฟล์ที่ไม่มี subfolder (เช่น PayFlow เดิม) ได้ค่า "core" เสมอ ไม่ใช่ undefined
+  // เพื่อให้ filter แบบ "เอาเฉพาะ core" ทำงานได้จริง (ดู plans/12-domain-facet.md)
+  domain: string;
 }
 
 export interface SearchQuery {
   text: string;
   layer?: Layer;
   tags?: string[];
+  domain?: string; // ไม่ระบุ = ไม่ filter, เห็นทุก domain
   limit?: number;
 }
 

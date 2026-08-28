@@ -251,6 +251,40 @@
 
 ---
 
+## ส่วนขยาย — Domain facet แก้ปัญหา vector recall ตกที่ scale → [แผน 12](plans/12-domain-facet.md) / [แผน 13](plans/13-domain-facet-test.md)
+
+> เพิ่ม `domain: string` (required) เข้า `MemoryNote` และ `domain?: string` เข้า `SearchQuery` — **แก้ `core/` ครั้งแรกหลัง Phase 0** (ดู invariants ด้านล่าง) เพื่อให้ pre-filter ตัด candidate pool ข้าม domain ก่อนคำนวณ cosine ได้จริง
+
+**Plan 12 (สร้าง facet) — เสร็จครบ T1-T8:**
+- [x] **T1-T2** เพิ่ม field ใน `core/types.ts` + derive `domain` จาก path ใน `vault-reader.ts` (rule: subfolder ขึ้นต้น `synthetic-` → ตัด prefix, ไม่มี subfolder → `"core"`) — **ไม่ต้อง regenerate 1,890 ไฟล์เลย** ข้อมูลมาจาก path ที่มีอยู่แล้ว
+- [x] **T3** เพิ่ม domain filter เข้า `vector.backend.ts`, `ripgrep.backend.ts`, `fts5.backend.ts` — `router.ts`/`graph.backend.ts` **ไม่ต้องแก้เลย** (พบระหว่างทำว่าเป็น pass-through อยู่แล้ว ไม่ได้ reconstruct query object)
+- [x] **T4** เพิ่ม `domain` parameter ใน `mcp.ts` tool `search_memory` — ทดสอบผ่าน JSON-RPC จริง: `domain="core"` คืนเฉพาะไฟล์ PayFlow, `domain="warehouse-robotics"` คืนเฉพาะไฟล์โดเมนนั้น ไม่ปนกันเลย
+- [x] **T5** บันทึกเหตุผลการแก้ `core/` ไว้ใน invariants section (ดูด้านล่าง)
+- [x] **T6** แก้ `router.test.ts` fixture (`makeNote`) เพิ่ม `domain: "core"` — `npm run test` ผ่านครบ 11/11 เหมือนเดิม
+- [x] **T7** FTS5 schema migration — เพิ่มคอลัมน์ `domain TEXT NOT NULL` + index ใน `schema.sql`, แก้ `INSERT`/`UPDATE` ใน `reindex-core.ts`, แก้ SQL filter ใน `fts5.backend.ts` — ลบ `data/index.sqlite` เก่าแล้ว `npm run reindex -- --full` ใหม่ (schema เปลี่ยน ต้อง full ไม่ใช่ incremental) ยืนยันด้วย query ตรง: 31 distinct domain (30 synthetic + core), core มี 55 note พอดีตรงกับ PayFlow จริง
+- [x] **T8** เพิ่ม `domain` query param ใน `serve.ts` + ช่อง filter ใน `web/app/page.tsx` (input ข้าง tags ไม่ใช่ dropdown เพราะ domain มีได้ 31 ค่า ไม่ตายตัวแบบ layer)
+
+**Plan 13 (วัดผลจริง) — เสร็จ T1-T3, T5 (ข้าม T4 bonus):**
+
+| backend | recall ไม่ filter @ 1,945 | recall filter `domain=core` @ 1,945 | baseline @ 55 ไฟล์ | ผล |
+|---|---|---|---|---|
+| **vector** | 0.53 | **0.75** | 0.78 | +0.22 ใกล้ baseline |
+| ripgrep | 0.62–0.64 | **0.73** | 0.74 | +0.10 เกือบเท่า baseline |
+| fts5 | 0.67 | **0.75** | 0.72 | +0.08 **เกิน baseline** |
+| router-route | 0.63–0.65 | **0.82** | ~0.845 | +0.18 ใกล้ baseline |
+| **router-fuse** | 0.79–0.81 | **0.93** | ~0.925 | +0.13 **เกิน baseline** |
+| graph | 0.65 | **0.86** | 0.86 | +0.21 **เท่า baseline เป๊ะ** |
+
+**latency ก็ดีขึ้นด้วย ไม่ใช่แค่ recall** — vector p50 3.46ms → **0.24ms**, router-route 3.48ms → 0.31ms (candidate pool เล็กลง 35 เท่าจริง วัดได้ทั้งสองด้าน)
+
+**สมมติฐานของ plan 13 ยืนยันแล้ว:** เมื่อ filter ทำงานถูกจริง candidate pool กลับไปเทียบเท่า 55 ไฟล์ recall จึงกลับไปใกล้เคียง (หรือเกิน เพราะ noise ที่เคยมี MRR/tie-break ผันผวนหายไปด้วย) baseline เดิม — พิสูจน์ว่า domain facet แก้ปัญหาตรงจุดจริง ไม่ใช่แค่ทฤษฎี
+
+**Finding แถมที่เจอระหว่างทาง (ไม่เกี่ยวกับ domain facet โดยตรง แต่สำคัญ):** รัน `npm run bench` **โค้ดเดียวกันเป๊ะ ไม่มีการแก้ไขใดๆ ระหว่างสองรอบ** ติดกัน 2 ครั้งที่ 1,945 ไฟล์ ได้ recall/MRR ต่างกัน (เช่น router-fuse 0.79 → 0.81, ripgrep MRR 0.59 → 0.57) — **ขัดกับที่ README เคยระบุว่า "recall/precision/MRR reproducible 100%"** ซึ่งเป็นจริงที่ scale เล็ก (55 ไฟล์) แต่ไม่ hold ที่ 1,945 ไฟล์ สาเหตุที่เป็นไปได้มากที่สุด: content ที่ใกล้เคียงกันมาก (จาก template เดียวกัน ดู cosine similarity 0.77-0.89 ที่วัดไว้ก่อนหน้า) ทำให้เกิด **tie score บ่อยขึ้น** และการตัด tie ขึ้นกับลำดับที่ไม่รับประกันความคงที่ข้าม run (เช่น ripgrep parallel directory traversal) — **ยังไม่ได้สืบสาเหตุลึกหรือแก้ไข เก็บไว้เป็น finding สำหรับ session ถัดไป**
+
+**Gate ของทั้งสองแผน:** ✅ ผ่านครบ — domain filter ทำงานถูกต้อง (unit test + JSON-RPC ยืนยัน), ไม่มี regression ต่อ query ที่ไม่ระบุ domain (ความต่างเล็กน้อยที่เจอมาจาก non-determinism ข้างต้น ไม่ใช่จาก domain facet), recall กู้กลับมาได้จริงตามที่คาดการณ์ไว้
+
+---
+
 ## Decisions — ตัดสินครบแล้ว (2026-08-22)
 
 | ID | เรื่อง | ผลที่เลือก | เหตุผล |
@@ -274,7 +308,7 @@
 ## Invariants — เช็คทุกครั้งที่จบ workshop
 
 - [x] `core/` ไม่ import อะไรจาก `search/` (CLAUDE.md §2.3) — ยืนยันด้วย grep, ไม่พบเลย
-- [x] `core/` ไม่ถูกแก้หลัง Phase 0 (CLAUDE.md §2.4) — ยืนยันด้วย file mtime ของทั้ง 3 ไฟล์ใน `src/core/` (ไม่มี git ในโปรเจกต์นี้)
+- [!] `core/` ไม่ถูกแก้หลัง Phase 0 (CLAUDE.md §2.4) — **ทำลาย invariant นี้อย่างมีสติแล้วที่ [plans/12-domain-facet.md](plans/12-domain-facet.md) (2026-08-28)**: เพิ่ม field `domain: string` (required) เข้า `MemoryNote` และ `domain?: string` เข้า `SearchQuery` เพื่อแก้ปัญหา vector recall ตกหนักที่ scale ใหญ่ (cosine similarity ข้าม synthetic domain สูงถึง 0.77-0.89 เพราะ template ซ้ำกัน วัดจริงแล้ว) — เป็นการแก้แบบ **additive เท่านั้น** (เพิ่ม field ใหม่ ไม่เปลี่ยน field เดิม, `SearchQuery.domain` optional ไม่กระทบ query เดิม) ตัดสินใจร่วมกับผู้ใช้ผ่าน `AskUserQuestion` ก่อนแก้ ไม่ใช่การพลาดหรือมองข้าม — เก็บ invariant เดิมไว้เป็น `[x]` ต่อจาก Phase 0 ถึงก่อน 2026-08-28 เพื่อ audit trail ว่า core freeze ยึดได้นานแค่ไหนก่อนมีเหตุผลจริงให้แก้
 - [x] ลบ `data/` ทั้งโฟลเดอร์แล้ว rebuild ได้ ไม่มีข้อมูลหาย (CLAUDE.md §2.2) — ทดสอบจริงตอนจบ WS04 (`data/index.sqlite`, `data/embeddings.sqlite` ลบแล้ว `npm run reindex -- --full` + `npm run bench` รันผ่านปกติ)
 - [x] ไม่มี LLM call ใน decision path ใดๆ นอกจาก embedding ที่อนุมัติแล้ว (CLAUDE.md §2.1) — query classifier เป็น regex/นับคำล้วนๆ, RRF เป็นสูตรคณิตศาสตร์
 - [x] `SearchBackend` signature ไม่เปลี่ยนตั้งแต่จบ WS01 (CLAUDE.md §4.2) — ยืนยันด้วยการอ่าน `backend.interface.ts` ตรงๆ

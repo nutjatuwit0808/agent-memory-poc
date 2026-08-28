@@ -35,6 +35,8 @@
 | ไฟล์ | โฟกัส | dependency ใหม่ | สถานะ |
 |---|---|---|---|
 | [11-scale-1000.md](11-scale-1000.md) | ทดสอบ recall/latency/MCP cold-start ที่ vault ใหญ่ขึ้น 35 เท่า (55→1,945 ไฟล์) ด้วย synthetic distractor 30 domain สมมติ | ไม่มี | ✅ เสร็จแล้ว |
+| [12-domain-facet.md](12-domain-facet.md) | เพิ่ม `domain` facet เข้า `core/types.ts` (**แก้ `core/` ครั้งแรกหลัง Phase 0** — ตัดสินใจร่วมกับผู้ใช้แล้ว) เพื่อให้ pre-filter ตัด candidate pool ข้าม domain ก่อนคำนวณ cosine ได้ | ไม่มี | ✅ เสร็จแล้ว (T1-T8) |
+| [13-domain-facet-test.md](13-domain-facet-test.md) | วัดผลจริงว่า domain filter (จาก 12) กู้ recall ของ vector ที่ 1,945 ไฟล์ได้แค่ไหน — ต้องทำ 12 ก่อน | ไม่มี | ✅ เสร็จแล้ว (T1-T3, T5 — ข้าม T4 bonus) |
 
 ## นโยบาย dependency สำหรับ Workshop 06–10 (ตัดสิน 2026-08-23)
 

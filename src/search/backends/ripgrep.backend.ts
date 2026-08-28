@@ -167,6 +167,9 @@ export class RipgrepBackend implements SearchBackend {
     if (query.layer) {
       results = results.filter((r) => r.note.layer === query.layer);
     }
+    if (query.domain) {
+      results = results.filter((r) => r.note.domain === query.domain);
+    }
     if (query.tags && query.tags.length > 0) {
       // AND semantics: note ต้องมีครบทุก tag ที่ query ระบุ ไม่ใช่แค่ตัวใดตัวหนึ่ง
       // เพราะ use case จริงคือ "แคบผลลัพธ์ลง" ไม่ใช่ "ขยายผลลัพธ์" — ผู้ใช้ที่ระบุ
