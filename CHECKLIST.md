@@ -207,6 +207,50 @@
 
 ---
 
+## ส่วนขยาย — Scale test ที่ 1,945 ไฟล์ → [แผน](plans/11-scale-1000.md)
+
+> ไม่ใช่ workshop ใหม่ในโครงนับเลข 01-10 — ทดสอบว่าตัวเลข recall/latency/MCP ที่วัดจาก vault 55 ไฟล์จริงยัง hold อยู่ไหมเมื่อ corpus ใหญ่ขึ้น 35 เท่า
+
+- [x] **สร้าง synthetic distractor vault** — 30 โดเมนธุรกิจสมมติ (ไม่เกี่ยวกับ payment/refund/order เลย) × 63 ไฟล์/โดเมน = 1,890 ไฟล์ ผ่าน `src/cli/generate-synthetic-vault.ts` — vault เดิม 55 ไฟล์จริง + `bench/queries.json` (ground truth) **ไม่ถูกแตะเลย** รวมเป็น 1,945 ไฟล์ ยืนยันด้วย `readVault()` (0 error) และ `git status` (55 ไฟล์เดิม/ground truth/`src/core/` ไม่เปลี่ยน)
+- [x] **เชิงปริมาณ — `npm run bench` วัด 3 จุด (55 / 1,000 / 1,945 ไฟล์)**:
+
+  | backend | recall@5 (55) | recall@5 (1,000) | recall@5 (1,945) | p50 (55) | p50 (1,000) | p50 (1,945) |
+  |---|---|---|---|---|---|---|
+  | ripgrep | 0.74 | 0.69 | 0.62 | ~30ms | 42.24ms | 53.98ms |
+  | fts5 | 0.72 | 0.67 | **0.67** | ~0.06ms | 0.12ms | 0.13ms |
+  | vector | 0.78 | 0.63 | **0.53** | ~0.14ms | 1.64ms | 3.46ms |
+  | router-route | ~0.845 | 0.71 | 0.65 | ~0.19ms | 1.72ms | 3.48ms |
+  | router-fuse | ~0.925 | 0.85 | 0.81 | ~29ms | 45.35ms | 54.73ms |
+  | graph | 0.86 | 0.72 | 0.65 | ~0.19ms | 1.69ms | 3.36ms |
+
+  **recall:** ตกต่อเนื่องทุก backend ยิ่ง scale ใหญ่ยิ่งตกมากขึ้น — **vector ตกหนักสุดและตกต่อเนื่อง** (0.78→0.63→0.53) เพราะยิ่งมี candidate เยอะยิ่งมีโอกาสที่ distractor ที่ใช้คำศัพท์คล้ายกัน (timeout/retry/policy/incident ข้ามโดเมน) แซงคำตอบจริง ตรงข้ามกับ **fts5 ที่นิ่งที่สุดในระบบ** (0.67 เท่ากันเป๊ะทั้ง 1,000 และ 1,945 ไฟล์) เพราะ exact/keyword match ไม่สนใจปริมาณ noise เลย ส่วน `router-fuse` ยังสูงสุดตลอดทุก scale (0.81 ที่ 1,945 ไฟล์) แต่ก็ตกตามเทรนด์เดียวกัน
+  **latency:** โตแบบ **sub-linear** สำหรับ ripgrep/fts5/router-fuse (ไฟล์โต 35 เท่า แต่ latency โตแค่ ~1.8-2.2 เท่า เพราะต้นทุนหลักคือ subprocess-spawn/O(log n) index ซึ่งเป็นค่าคงที่) ต่างจาก **vector ที่โตเกือบเป็นสัดส่วนตรง** (~25 เท่า) เพราะต้องคำนวณ cosine similarity เทียบทุก embedding — แต่ในหน่วยจริงยังเร็วมาก (3.46ms)
+
+- [x] **เชิงปริมาณ — `npm run bench:mcp` วัด 3 จุด (55 / 1,000 / 1,945 ไฟล์)**:
+
+  | ตัวชี้วัด | 55 ไฟล์ | 1,000 ไฟล์ | 1,945 ไฟล์ |
+  |---|---|---|---|
+  | MCP overhead (ms) | 0.01ms | 0.12ms | **1.53ms** |
+  | MCP overhead (% ของ round-trip) | 1.5% | 4.4% | **22.1%** |
+  | cold start stdio | 615ms | 1,935ms | 2,859ms |
+  | cold start HTTP ครั้งแรก | 628ms | 2,140ms | 2,751ms |
+  | steady state (warm) | 30.5ms | 49ms | 51.3ms |
+
+  **cold start:** ยัง sub-linear ตลอด (35 เท่าไฟล์ → ~4.5 เท่า cold start) เพราะต้นทุนหลักคือ vector embedding build ที่โตช้ากว่าไฟล์ (4.5s→39.5s ที่ 1,000 ไฟล์, ~8.7 เท่า) — **steady state แทบไม่ขยับเลย** (30.5→51.3ms) เป็นข่าวดีที่สุด: ถ้า MCP server อุ่นแล้ว เรียกซ้ำเร็วเท่าเดิมไม่ว่า scale ไหน
+  **MCP overhead กลับไม่ sub-linear** — จาก 1,000→1,945 ไฟล์ (ไฟล์โตแค่ ~1.9 เท่า) overhead แบบ absolute โตถึง ~12.75 เท่า (0.12ms→1.53ms) เห็นชัดสุดในทุก query kind ที่ไม่ใช่ `exact`/`filtered`: engine ~5.5ms, HTTP ~5.6-5.8ms, แต่ MCP กระโดดไป ~7.0-7.2ms — ส่วนต่าง MCP-vs-HTTP โตจาก ~0.1ms เป็น ~1.3-1.4ms สม่ำเสมอทุก kind ไม่ใช่ noise ของ query เดียว สาเหตุที่เป็นไปได้: payload ที่ JSON-RPC ต้อง serialize/deserialize ใหญ่ขึ้นตาม index size ทำให้ต้นทุนห่อ JSON-RPC ของ MCP layer โตเร็วกว่า raw HTTP handler — **เป็นจุดที่ต้องระวังถ้า scale ไปไกลกว่านี้** แม้ในหน่วย absolute ยังเล็กมาก (1.53ms)
+- [x] **เชิงคุณภาพ — ทดสอบผ่าน Cursor จริง (Agent mode) ที่ 1,945 ไฟล์** 4 query (reload MCP connection ก่อนเริ่มเพื่อล้าง cache ของ vault เก่า):
+  1. *"ลูกค้าขอคืนเงินแล้วระบบค้าง"* (semantic, มี baseline จาก 55 ไฟล์) — **ผ่าน ไม่ตก**: `search_memory`×1, `get_memory`×4 (เทียบ baseline ×2/×3) คำตอบแม่นเท่าเดิมทุกจุด (Case 2891, `REFUND_STUCK_THRESHOLD_MIN`, `verifyPayment`) แถมดึง Case 3401 เพิ่มโดยไม่ถูกถาม
+  2. *"PAYMENT_GATEWAY_TIMEOUT_MS คืออะไร"* (exact identifier) — รอบแรก agent เลือกใช้ grep ของ Cursor เองแทน MCP (เพราะ workspace ไม่ isolate เห็นไฟล์ vault ตรงๆ) คำตอบถูกต้อง; **บังคับ MCP-only แล้วลองซ้ำ — ผ่านสะอาด**: `search_memory`×1, `get_memory`×2 คำตอบถูกต้องครบพร้อม citation
+  3. *"หุ่นยนต์หยิบสินค้าไม่สำเร็จควร retry กี่ครั้ง"* (semantic, เนื้อหาสังเคราะห์ใหม่ล้วนๆ ไม่มีใน ground truth เดิม) — **ผ่าน**: `search_memory`×2 (ลองคำค้นไทยแล้ว fallback เป็นอังกฤษ), `get_memory`×4 — ยืนยันด้วย grep ตรงไฟล์จริงว่าคำตอบ (`PICK_ENGINE_MAX_RETRY`, `failed_soft`/`failed_hard`) ตรงเกือบคำต่อคำ ไม่ใช่ hallucination
+  4. *"แพทย์เข้าถึงเวชระเบียนผู้ป่วยได้เมื่อไหร่"* (bonus, สังเคราะห์ domain อื่น) — **ผ่าน**: สังเคราะห์คำตอบจาก 3 ไฟล์แยกกัน (policy หลัก + edge case consult ข้ามแผนก 72 ชม. + emergency break-glass 48 ชม.) ถูกต้องครบ ยืนยันด้วย grep ตรงไฟล์จริง
+- [x] **Finding สำคัญ:** agent สลับใช้เครื่องมือตามประเภทคำถามเมื่อมีทั้ง MCP กับ built-in grep ให้เลือก (exact identifier → ลองใช้ grep ของ Cursor เองก่อน, semantic → ใช้ MCP โดยตรง) — พฤติกรรมสมเหตุสมผล ไม่ใช่ error แต่หมายความว่า **การไม่ isolate workspace ทำให้วัด "MCP ล้วนๆ" ไม่สะอาด 100%** ต้องบังคับใน prompt ("ใช้ MCP tool เท่านั้น") ถ้าต้องการผลที่ตัดปัจจัย built-in indexing ออก
+
+**Gate:** ตอบได้ว่า agent ยังเลือกเรียก MCP tool ถูกจังหวะไหมที่ scale 1,945 ไฟล์ และคำตอบยังแม่นยำในระดับที่ยอมรับได้ไหม ✅ — **ผ่านทั้ง 4/4 test case เชิงคุณภาพ** แม้ตัวเลข recall เชิงปริมาณ (bench.ts) จะตกลงจริงและต่อเนื่องที่ scale ใหญ่ขึ้น การใช้งานจริงผ่าน agent (ที่มี reasoning ช่วยกรอง noise) ทนทานกว่าตัวเลข raw recall ที่วัดจาก backend ตรงๆ — สอดคล้องกับ finding เดิมจาก W10-4 ที่ว่า "Cursor รู้มากกว่าที่มันเลือก cite เอง"
+
+**ตัวเลขทั้งหมด (เชิงปริมาณ + เชิงคุณภาพ) วัดที่ scale เดียวกัน (1,945 ไฟล์) แล้ว** — raw JSON: `data/bench-2026-08-28T08-38-11-950Z.json`, `data/bench-mcp-2026-08-28T08-42-27-657Z.json`
+
+---
+
 ## Decisions — ตัดสินครบแล้ว (2026-08-22)
 
 | ID | เรื่อง | ผลที่เลือก | เหตุผล |
