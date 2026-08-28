@@ -2,7 +2,48 @@
 
 Case study สำหรับเรียนรู้กลไกการจัดการ memory ของ agent ด้วยการ**เขียนเองทุกบรรทัด** (ไม่ใช้ framework สำเร็จรูปอย่าง Cognee/LangChain memory) — เปรียบเทียบ search backend 3 แบบ (ripgrep, SQLite FTS5, vector embedding) บน vault ข้อมูลชุดเดียวกัน ด้วย**ตัวเลขที่วัดจริง** ไม่ใช่ทฤษฎี
 
-รายละเอียดเป้าหมาย/หลักการออกแบบ/กติกาทั้งหมด: [`CLAUDE.md`](CLAUDE.md) · สถานะงานแบบละเอียด: [`CHECKLIST.md`](CHECKLIST.md) · แผนงานแต่ละ phase: [`plans/`](plans/README.md)
+รายละเอียดเป้าหมาย/หลักการออกแบบ/กติกาทั้งหมด: [`CLAUDE.md`](CLAUDE.md) · สถานะงานแบบละเอียด: [`CHECKLIST.md`](CHECKLIST.md) · แผนงานแต่ละ phase: [`plans/`](plans/README.md) · template ไฟล์ vault: [`docs/vault-file-templates.md`](docs/vault-file-templates.md)
+
+---
+
+## สารบัญ
+
+- [สรุปผลการทดลอง (TL;DR)](#สรุปผลการทดลอง-tldr)
+  - [Hybrid (router) ดีกว่าจุดอื่นยังไง](#hybrid-router-ดีกว่าจุดอื่นยังไง)
+  - [ข้อเสียของ hybrid](#ข้อเสียของ-hybrid)
+- [1. ภาพรวมโปรเจกต์](#1-ภาพรวมโปรเจกต์)
+- [2. วิธีใช้งาน](#2-วิธีใช้งาน)
+  - [ติดตั้ง](#ติดตั้ง)
+  - [คำสั่งหลัก](#คำสั่งหลัก)
+  - [UI เปรียบเทียบ](#ui-เปรียบเทียบ-พิมพ์-query-เองแล้วเห็นผลจาก-5-backend-พร้อมกัน)
+  - [ลบข้อมูลแล้วเริ่มใหม่ได้เสมอ](#ลบข้อมูลแล้วเริ่มใหม่ได้เสมอ)
+- [3. โครงสร้างโปรเจกต์](#3-โครงสร้างโปรเจกต์)
+- [4. เทคโนโลยีที่ใช้](#4-เทคโนโลยีที่ใช้)
+- [5. สิ่งที่ทดสอบ — 7 Workshop](#5-สิ่งที่ทดสอบ--7-workshop)
+  - [Workshop 01 — ripgrep](#workshop-01--ripgrep-search-แบบไม่มี-index)
+  - [Workshop 02 — SQLite FTS5](#workshop-02--sqlite-fts5-inverted-index--bm25)
+  - [Workshop 03 — Vector embedding](#workshop-03--vector-embedding-semantic-search)
+  - [Workshop 04 — Hybrid router](#workshop-04--hybrid-router-route--fuse)
+  - [Workshop 05 — Frontend เปรียบเทียบ](#workshop-05--frontend-เปรียบเทียบ-nextjs)
+  - [Workshop 06 — Graph traversal](#workshop-06--graph-traversal-wikilink-ที่มีอยู่แล้ว)
+  - [Workshop 07 — Cross-encoder reranking](#workshop-07--cross-encoder-reranking-2-stage-retrieval)
+- [6. เปรียบเทียบ — ข้อดี ข้อเสีย และเหมาะกับกรณีไหน](#6-เปรียบเทียบ--ข้อดี-ข้อเสีย-และเหมาะกับกรณีไหน)
+  - [6.1 ตารางรวม](#61-ตารางรวม)
+  - [6.2 recall@5 แยกตามประเภท query](#62-recall5-แยกตามประเภท-query--ตารางที่บอกความต่างจริง)
+  - [6.3 ข้อดี–ข้อเสีย และเหมาะกับกรณีไหน](#63-ข้อดีข้อเสีย-และเหมาะกับกรณีไหน)
+  - [6.4 ต้นทุนที่ต้องจ่าย](#64-ต้นทุนที่ต้องจ่าย-setup--maintenance)
+  - [6.5 เลือกยังไง](#65-เลือกยังไง)
+- [7. Scale test — 55 → 1,000 → 1,945 ไฟล์](#7-scale-test--55--1000--1945-ไฟล์)
+  - [Setup](#setup)
+  - [7.1 recall ตกลงจริง](#71-recall-ตกลงจริง-ยิ่ง-scale-ใหญ่ยิ่งตกมากขึ้น)
+  - [7.2 latency โต sub-linear](#72-latency-โต-sub-linear-เกือบทุกตัว-ยกเว้น-vector)
+  - [7.3 MCP overhead](#73-mcp-overhead-sub-linear-จนถึง-1000-ไฟล์-แล้วพลิกกลับที่-1945)
+  - [7.4 RAM ของ vector backend](#74-ram-ของ-vector-backend-ไม่ใช่ปัญหาที่-scale-นี้)
+  - [7.5 เชิงคุณภาพผ่าน Cursor จริง](#75-เชิงคุณภาพ--ทดสอบผ่าน-cursor-จริง-agent-mode-ที่-1945-ไฟล์)
+  - [7.6 แก้จริงด้วย domain facet](#76-แก้จริง--เพิ่ม-domain-facet-กู้-recall-กลับมาได้แค่ไหน)
+  - [7.7 recall/MRR ไม่ reproducible ที่ scale ใหญ่](#77-พบว่า-recallmrr-ไม่-reproducible-100-ที่-scale-ใหญ่-finding-ที่ยังไม่ได้แก้)
+  - [สรุปหัวข้อ 7](#สรุปหัวข้อ-7)
+- [`docs/vault-file-templates.md`](docs/vault-file-templates.md) — template ไฟล์ vault แยกไว้ต่างหาก (path/frontmatter/content ต่อ layer + flow diagram)
 
 ---
 
@@ -92,7 +133,10 @@ src/cli/            bench.ts (เทียบ backend), reindex.ts (build SQLite
 bench/              query set + ground truth (queries.json), บันทึกเคสทดสอบ (vault-cases.md)
 data/               derived state ทั้งหมด (SQLite, model cache, embedding cache) — ลบได้เสมอ
 workshops/           README ผลการทดลองแต่ละบท (4 บท)
+docs/                เอกสารอ้างอิง — template ไฟล์ vault (path/frontmatter/content ต่อ layer)
 ```
+
+**อยากรู้ว่าไฟล์ใน `vault/` แต่ละไฟล์ควรมีโครงสร้างยังไง (path, frontmatter, เนื้อหาต่อ layer)?** ดู [`docs/vault-file-templates.md`](docs/vault-file-templates.md) — สรุปจาก 1,890 ไฟล์ที่เขียนจริงและวัดผลแล้วในหัวข้อ 7
 
 ---
 
